@@ -22,7 +22,7 @@
   "addOns": {
     "common": {
       "name": "ChronoCal",
-      "logoUrl": "https://www.gstatic.com/images/branding/product/2x/calendar_64dp.png",
+      "logoUrl": "https://github.com/ivanovertime/ChronoCal/blob/trunk/assets/icon.png",
       "layoutProperties": {
         "primaryColor": "#1a73e8"
       },
