@@ -23,6 +23,14 @@ function deleteStoredValue_(key) {
   getUserProperties_().deleteProperty(key);
 }
 
+function normalizeSessionStatus_(status) {
+  if (status === 'PAUSED' || status === 'STOPPED') {
+    return status;
+  }
+
+  return 'RUNNING';
+}
+
 function normalizeSession_(session) {
   if (!session || !session.active_event_id || !session.calendar_id) {
     return null;
@@ -32,10 +40,12 @@ function normalizeSession_(session) {
     active_event_id: session.active_event_id,
     calendar_id: session.calendar_id,
     event_title: session.event_title || 'Evento sin título',
+    time_zone: session.time_zone || session.timeZone || Session.getScriptTimeZone(),
     started_at_ms: Number(session.started_at_ms || Date.now()),
     started_at_iso: session.started_at_iso || new Date(Number(session.started_at_ms || Date.now())).toISOString(),
     elapsed_ms: Number(session.elapsed_ms || 0),
-    status: session.status === 'PAUSED' ? 'PAUSED' : 'RUNNING'
+    status: normalizeSessionStatus_(session.status),
+    stopped_at_iso: session.stopped_at_iso || ''
   };
 }
 
@@ -58,6 +68,32 @@ function getSessions_() {
       sessions = [legacySession];
       saveSessions_(sessions);
     }
+  }
+
+  // Migration path for the older single pending-result store: fold it into the
+  // sessions list as a STOPPED entry so every event lives in one collection.
+  var legacyResult = getStoredJson_(CHRONOCAL_CONFIG.lastResultPropertyKey);
+  if (legacyResult && legacyResult.event_id) {
+    var alreadyTracked = sessions.some(function(session) {
+      return session.active_event_id === legacyResult.event_id && session.calendar_id === (legacyResult.calendar_id || 'primary');
+    });
+
+    if (!alreadyTracked) {
+      var stoppedAtMs = Date.parse(legacyResult.stopped_at_iso || '') || Date.now();
+      sessions.push(normalizeSession_({
+        active_event_id: legacyResult.event_id,
+        calendar_id: legacyResult.calendar_id || 'primary',
+        event_title: legacyResult.event_title,
+        time_zone: legacyResult.time_zone,
+        started_at_ms: stoppedAtMs,
+        elapsed_ms: Number(legacyResult.duration_ms || 0),
+        status: 'STOPPED',
+        stopped_at_iso: legacyResult.stopped_at_iso || new Date(stoppedAtMs).toISOString()
+      }));
+    }
+
+    deleteStoredValue_(CHRONOCAL_CONFIG.lastResultPropertyKey);
+    saveSessions_(sessions);
   }
 
   return sessions;
@@ -330,7 +366,7 @@ function buildEventContextFromSession_(session) {
     eventId: session.active_event_id || '',
     calendarId: session.calendar_id || 'primary',
     eventTitle: session.event_title || 'Evento sin título',
-    timeZone: session.timeZone || Session.getScriptTimeZone()
+    timeZone: session.time_zone || session.timeZone || Session.getScriptTimeZone()
   };
 }
 
@@ -398,6 +434,20 @@ function resumeSessionInPlace_(session, nowMs) {
 
   session.started_at_ms = Number(nowMs || Date.now());
   session.status = 'RUNNING';
+}
+
+function stopSessionInPlace_(session, nowMs) {
+  if (!session) {
+    return;
+  }
+
+  var currentMs = Number(nowMs || Date.now());
+  if (session.status === 'RUNNING') {
+    session.elapsed_ms = Number(session.elapsed_ms || 0) + Math.max(0, currentMs - Number(session.started_at_ms || currentMs));
+  }
+  session.started_at_ms = currentMs;
+  session.status = 'STOPPED';
+  session.stopped_at_iso = new Date(currentMs).toISOString();
 }
 
 function buildEventContextFromResult_(result) {

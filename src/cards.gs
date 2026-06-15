@@ -1,181 +1,184 @@
 function buildBaseCard_(options) {
   var eventContext = options.eventContext || null;
   var sessions = options.sessions || [];
-  var currentSession = eventContext ? getSessionForEvent_(sessions, eventContext) : null;
-  var runningSession = getRunningSession_(sessions);
-  var lastResult = options.lastResult || null;
+  var entries = buildTrackingEntries_(eventContext, sessions);
+  var activeCount = countActiveSessions_(sessions);
+
   var cardBuilder = CardService.newCardBuilder();
   var header = CardService.newCardHeader().setTitle('ChronoCal');
-
-  if (eventContext && eventContext.eventTitle) {
-    header.setSubtitle(eventContext.eventTitle);
-  } else {
-    header.setSubtitle('Tracking local de tiempo para Google Calendar');
-  }
-
+  header.setSubtitle(
+    activeCount > 0
+      ? activeCount + (activeCount === 1 ? ' evento en seguimiento' : ' eventos en seguimiento')
+      : 'Seguimiento local de tiempo'
+  );
   cardBuilder.setHeader(header);
 
-  var introSection = CardService.newCardSection();
-  introSection.addWidget(
-    CardService.newTextParagraph().setText(
-      eventContext
-        ? 'Registra tiempo directamente sobre este evento. El estado se guarda en tu cuenta de Google.'
-        : 'Abre un evento de Google Calendar para iniciar o revisar un registro de tiempo.'
-    )
-  );
-  cardBuilder.addSection(introSection);
-
-  if (eventContext) {
-    var isSameActive = currentSession && currentSession.status === 'RUNNING';
-    var hasPendingResult = Boolean(lastResult);
-    var hasActiveInOtherEvent = runningSession && !isSameEvent_(runningSession, eventContext);
-    var activeSessionContext = runningSession ? buildEventContextFromSession_(runningSession) : null;
-    var pendingResultContext = lastResult ? buildEventContextFromResult_(lastResult) : eventContext;
-    var statusSection = CardService.newCardSection().setHeader('Estado de la sesión');
-    var statusText = 'Sin iniciar';
-    var elapsedText = '—';
-
-    if (currentSession) {
-      statusText = currentSession.status === 'PAUSED' ? 'Pausado' : 'Activo';
-      elapsedText = formatDuration_(calculateSessionDurationMs_(currentSession));
-    } else if (hasPendingResult && lastResult.event_id === eventContext.eventId && lastResult.calendar_id === eventContext.calendarId) {
-      statusText = 'Detenido (pendiente de guardar)';
-      elapsedText = formatDuration_(Number(lastResult.duration_ms || 0));
-    }
-
-    statusSection.addWidget(CardService.newDecoratedText().setTopLabel('Evento').setText(eventContext.eventTitle));
-    if (isUntitledEvent_(eventContext.eventTitle)) {
-      statusSection.addWidget(CardService.newDecoratedText().setTopLabel('ID del evento').setText(eventContext.eventId));
-    }
-    statusSection.addWidget(CardService.newDecoratedText().setTopLabel('Estado').setText(statusText));
-    statusSection.addWidget(CardService.newDecoratedText().setTopLabel('Tiempo transcurrido').setText(elapsedText));
-    cardBuilder.addSection(statusSection);
-
-    var actionSection = CardService.newCardSection().setHeader('Acciones');
-    var buttonSet = CardService.newButtonSet();
-
-    if (currentSession && currentSession.status === 'RUNNING') {
-      buttonSet.addButton(createPrimaryPauseButton_(eventContext));
-      buttonSet.addButton(createPrimaryStopButton_(eventContext));
-      buttonSet.addButton(createSecondaryButton_('Refrescar', 'onRefreshCard', eventContext, CardService.TextButtonStyle.OUTLINED));
-    } else if (currentSession && currentSession.status === 'PAUSED') {
-      buttonSet.addButton(createPrimaryResumeButton_(eventContext));
-      buttonSet.addButton(createPrimaryStopButton_(eventContext));
-      buttonSet.addButton(createSecondaryButton_('Refrescar', 'onRefreshCard', eventContext, CardService.TextButtonStyle.OUTLINED));
-    } else {
-      buttonSet.addButton(createPrimaryStartButton_(eventContext));
-      buttonSet.addButton(createSecondaryButton_('Refrescar', 'onRefreshCard', eventContext, CardService.TextButtonStyle.OUTLINED));
-    }
-
-    actionSection.addWidget(buttonSet);
-    cardBuilder.addSection(actionSection);
-
-    if (hasActiveInOtherEvent && activeSessionContext) {
-      var globalSessionSection = CardService.newCardSection().setHeader('Sesión activa en otro evento');
-      var globalButtons = CardService.newButtonSet();
-
-      globalSessionSection.addWidget(
-        CardService.newDecoratedText()
-          .setTopLabel('Evento activo')
-          .setText(runningSession.event_title || activeSessionContext.eventTitle || 'Evento sin título')
-      );
-      globalSessionSection.addWidget(
-        CardService.newDecoratedText()
-          .setTopLabel('Tiempo acumulado')
-          .setText(formatDuration_(calculateSessionDurationMs_(runningSession)))
-      );
-
-      if (runningSession.status === 'RUNNING') {
-        globalButtons.addButton(createPrimaryPauseButton_(activeSessionContext));
-      } else if (runningSession.status === 'PAUSED') {
-        globalButtons.addButton(createPrimaryResumeButton_(activeSessionContext));
-      }
-      globalButtons.addButton(createPrimaryStopButton_(activeSessionContext));
-      globalSessionSection.addWidget(globalButtons);
-      cardBuilder.addSection(globalSessionSection);
-    }
-
-    if (hasPendingResult) {
-      var pendingSection = CardService.newCardSection().setHeader('Resultado pendiente');
-      var pendingButtons = CardService.newButtonSet();
-
-      pendingSection.addWidget(
-        CardService.newDecoratedText()
-          .setTopLabel('Duración lista para guardar')
-          .setText(formatDuration_(Number(lastResult.duration_ms || 0)))
-      );
-      pendingSection.addWidget(
-        CardService.newDecoratedText()
-          .setTopLabel('Evento del resultado')
-          .setText(lastResult.event_title || 'Evento sin título')
-      );
-
-      pendingButtons.addButton(createPrimarySaveButton_(pendingResultContext));
-      pendingButtons.addButton(createSecondaryButton_('Descartar', 'onDiscardLastResult', pendingResultContext, CardService.TextButtonStyle.OUTLINED));
-      pendingSection.addWidget(pendingButtons);
-      pendingSection.addWidget(
-        CardService.newTextParagraph().setText('Guardar en evento es una acción separada para no mezclar tracking y escritura de Calendar.')
-      );
-      cardBuilder.addSection(pendingSection);
-    }
+  if (!entries.length) {
+    var emptySection = CardService.newCardSection();
+    emptySection.addWidget(
+      CardService.newDecoratedText()
+        .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.CLOCK))
+        .setText('Sin eventos en seguimiento')
+        .setBottomLabel('Abre un evento de Calendar y pulsa iniciar.')
+        .setWrapText(true)
+    );
+    cardBuilder.addSection(emptySection);
+    cardBuilder.addSection(buildFooterSection_());
+    return cardBuilder.build();
   }
 
-  var footerSection = CardService.newCardSection();
-  footerSection.addWidget(
-    CardService.newTextParagraph().setText(
-      'MVP: CardService sin reloj en vivo. El tiempo se recalcula al pulsar acciones.'
-    )
-  );
-  cardBuilder.addSection(footerSection);
+  for (var i = 0; i < entries.length; i++) {
+    cardBuilder.addSection(buildEntrySection_(entries[i]));
+  }
+
+  cardBuilder.addSection(buildToolbarSection_(entries[0].context));
+  cardBuilder.addSection(buildFooterSection_());
 
   return cardBuilder.build();
 }
 
-function createPrimaryStartButton_(eventContext) {
-  return CardService.newTextButton()
-    .setText('Iniciar registro')
-    .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-    .setBackgroundColor('#1e8e3e')
-    .setOnClickAction(buildCardAction_('onStartTracking', eventContext));
+function buildTrackingEntries_(eventContext, sessions) {
+  var entries = [];
+  var seen = {};
+  var list = sessions || [];
+
+  if (eventContext && eventContext.eventId) {
+    seen[entryKey_(eventContext.calendarId, eventContext.eventId)] = true;
+    entries.push({
+      context: eventContext,
+      session: getSessionForEvent_(list, eventContext),
+      isOpen: true
+    });
+  }
+
+  for (var i = 0; i < list.length; i++) {
+    var session = list[i];
+    var key = entryKey_(session.calendar_id, session.active_event_id);
+    if (seen[key]) {
+      continue;
+    }
+    seen[key] = true;
+    entries.push({
+      context: buildEventContextFromSession_(session),
+      session: session,
+      isOpen: false
+    });
+  }
+
+  return entries;
 }
 
-function createPrimaryStopButton_(eventContext) {
-  return CardService.newTextButton()
-    .setText('Detener')
-    .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-    .setBackgroundColor('#d93025')
-    .setOnClickAction(buildCardAction_('onStopTracking', eventContext));
+function entryKey_(calendarId, eventId) {
+  return (calendarId || 'primary') + '::' + (eventId || '');
 }
 
-function createPrimaryPauseButton_(eventContext) {
-  return CardService.newTextButton()
-    .setText('Pausar')
-    .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-    .setBackgroundColor('#f9ab00')
-    .setOnClickAction(buildCardAction_('onPauseTracking', eventContext));
+function countActiveSessions_(sessions) {
+  var list = sessions || [];
+  var count = 0;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].status === 'RUNNING' || list[i].status === 'PAUSED') {
+      count++;
+    }
+  }
+  return count;
 }
 
-function createPrimaryResumeButton_(eventContext) {
-  return CardService.newTextButton()
-    .setText('Reanudar')
-    .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-    .setBackgroundColor('#1e8e3e')
-    .setOnClickAction(buildCardAction_('onResumeTracking', eventContext));
+function buildEntrySection_(entry) {
+  var context = entry.context;
+  var session = entry.session;
+  var status = session ? session.status : 'NONE';
+  var section = CardService.newCardSection();
+
+  var title = context.eventTitle && !isUntitledEvent_(context.eventTitle)
+    ? context.eventTitle
+    : (entry.isOpen ? 'Evento actual' : 'Evento sin título');
+
+  section.addWidget(
+    CardService.newDecoratedText()
+      .setStartIcon(CardService.newIconImage().setIcon(statusIcon_(status)))
+      .setTopLabel(statusLabel_(status) + (entry.isOpen ? ' · abierto' : ''))
+      .setText(title)
+      .setBottomLabel('Tiempo: ' + (session ? formatDuration_(calculateSessionDurationMs_(session)) : '00:00:00'))
+      .setWrapText(true)
+  );
+
+  section.addWidget(buildEntryActions_(status, context));
+
+  return section;
 }
 
-function createPrimarySaveButton_(eventContext) {
-  return CardService.newTextButton()
-    .setText('Guardar en evento')
-    .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-    .setBackgroundColor('#1a73e8')
-    .setOnClickAction(buildCardAction_('onSaveLastResultToEvent', eventContext));
+function buildEntryActions_(status, context) {
+  var buttons = CardService.newButtonSet();
+
+  if (status === 'RUNNING') {
+    buttons.addButton(createIconButton_('pause', 'Pausar', 'onPauseTracking', context));
+    buttons.addButton(createIconButton_('stop', 'Detener', 'onStopTracking', context));
+  } else if (status === 'PAUSED') {
+    buttons.addButton(createIconButton_('play_arrow', 'Reanudar', 'onResumeTracking', context));
+    buttons.addButton(createIconButton_('stop', 'Detener', 'onStopTracking', context));
+  } else if (status === 'STOPPED') {
+    buttons.addButton(createIconButton_('play_arrow', 'Reanudar', 'onResumeTracking', context));
+    buttons.addButton(createIconButton_('save', 'Guardar en el evento', 'onSaveSession', context));
+    buttons.addButton(createIconButton_('delete', 'Descartar', 'onDiscardSession', context));
+  } else {
+    buttons.addButton(createIconButton_('play_arrow', 'Iniciar', 'onStartTracking', context));
+  }
+
+  return buttons;
 }
 
-function createSecondaryButton_(label, functionName, eventContext, style) {
-  return CardService.newTextButton()
-    .setText(label)
-    .setTextButtonStyle(style || CardService.TextButtonStyle.OUTLINED)
-    .setOnClickAction(buildCardAction_(functionName, eventContext));
+function buildToolbarSection_(context) {
+  var section = CardService.newCardSection();
+  section.addWidget(
+    CardService.newButtonSet().addButton(
+      CardService.newTextButton()
+        .setText('Actualizar tiempos')
+        .setTextButtonStyle(CardService.TextButtonStyle.OUTLINED)
+        .setOnClickAction(buildCardAction_('onRefreshCard', context))
+    )
+  );
+  return section;
+}
+
+function buildFooterSection_() {
+  var section = CardService.newCardSection();
+  section.addWidget(
+    CardService.newTextParagraph().setText(
+      'Los tiempos se recalculan al usar una acción o al pulsar «Actualizar tiempos».'
+    )
+  );
+  return section;
+}
+
+function statusLabel_(status) {
+  if (status === 'RUNNING') {
+    return 'En curso';
+  }
+  if (status === 'PAUSED') {
+    return 'Pausado';
+  }
+  if (status === 'STOPPED') {
+    return 'Detenido';
+  }
+  return 'Sin iniciar';
+}
+
+function statusIcon_(status) {
+  if (status === 'RUNNING') {
+    return CardService.Icon.VIDEO_PLAY;
+  }
+  return CardService.Icon.CLOCK;
+}
+
+function createIconButton_(iconName, altText, functionName, context) {
+  return CardService.newImageButton()
+    .setAltText(altText)
+    .setIconUrl(chronoActionIconUrl_(iconName))
+    .setOnClickAction(buildCardAction_(functionName, context));
+}
+
+function chronoActionIconUrl_(iconName) {
+  return 'https://www.gstatic.com/images/icons/material/system/1x/' + iconName + '_grey600_24dp.png';
 }
 
 function buildCardAction_(functionName, eventContext) {
