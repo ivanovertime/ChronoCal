@@ -18,7 +18,6 @@ No external backend, no third-party storage, and no browser-side timer dependenc
 ```text
 .
 |- appsscript.json
-|- CLASP_SETUP.md
 |- src/
 |  |- main.gs
 |  |- cards.gs
@@ -27,6 +26,8 @@ No external backend, no third-party storage, and no browser-side timer dependenc
 |  |- sheets.gs
 |  '- config.gs
 '- docs/
+   |- CLASP_SETUP.md
+   |- README.md
    '- prd/
       '- README.md
 ```
@@ -53,7 +54,7 @@ npx @google/clasp push
 npx @google/clasp open
 ```
 
-For a full deployment workflow, see [CLASP_SETUP.md](CLASP_SETUP.md).
+For a full deployment workflow, see [docs/CLASP_SETUP.md](docs/CLASP_SETUP.md).
 
 ## How to test
 
@@ -72,7 +73,18 @@ For a full deployment workflow, see [CLASP_SETUP.md](CLASP_SETUP.md).
 ## Documentation
 
 - Product requirements document: [docs/prd/README.md](docs/prd/README.md)
-- Deployment setup: [CLASP_SETUP.md](CLASP_SETUP.md)
+- Documentation index: [docs/README.md](docs/README.md)
+- Deployment setup: [docs/CLASP_SETUP.md](docs/CLASP_SETUP.md)
+
+## Contributing
+
+- Contribution guidelines: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Pull request template: [.github/pull_request_template.md](.github/pull_request_template.md)
+- Issue templates: [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE)
+
+## License
+
+Licensed under MIT. See [LICENSE](LICENSE).
 
 ## Status
 
