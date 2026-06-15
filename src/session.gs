@@ -36,10 +36,12 @@ function normalizeSession_(session) {
     return null;
   }
 
+  var defaultLocale = CHRONOCAL_CONFIG.defaultLocale;
+
   return {
     active_event_id: session.active_event_id,
     calendar_id: session.calendar_id,
-    event_title: session.event_title || 'Evento sin título',
+    event_title: session.event_title || t_('common.untitledEvent', null, defaultLocale),
     time_zone: session.time_zone || session.timeZone || Session.getScriptTimeZone(),
     started_at_ms: Number(session.started_at_ms || Date.now()),
     started_at_iso: session.started_at_iso || new Date(Number(session.started_at_ms || Date.now())).toISOString(),
@@ -167,8 +169,8 @@ function formatDuration_(durationMs) {
     .join(':');
 }
 
-function formatDateForUser_(dateValue, timeZone) {
-  return Utilities.formatDate(dateValue, timeZone || Session.getScriptTimeZone(), 'dd/MM/yyyy');
+function formatDateForUser_(dateValue, timeZone, locale) {
+  return Utilities.formatDate(dateValue, timeZone || Session.getScriptTimeZone(), getDateFormatPatternForLocale_(locale));
 }
 
 function getEventMetaCache_() {
@@ -348,7 +350,10 @@ function getEventContext_(e) {
   var context = {
     eventId: eventId,
     calendarId: calendarId,
-    eventTitle: firstNonEmpty_([eventTitle, cachedMeta && cachedMeta.eventTitle], 'Evento sin título'),
+    eventTitle: firstNonEmpty_([
+      eventTitle,
+      cachedMeta && cachedMeta.eventTitle
+    ], t_('common.untitledEvent', null, CHRONOCAL_CONFIG.defaultLocale)),
     timeZone: firstNonEmpty_([timeZone, cachedMeta && cachedMeta.timeZone], Session.getScriptTimeZone())
   };
 
@@ -365,7 +370,7 @@ function buildEventContextFromSession_(session) {
   return {
     eventId: session.active_event_id || '',
     calendarId: session.calendar_id || 'primary',
-    eventTitle: session.event_title || 'Evento sin título',
+    eventTitle: session.event_title || t_('common.untitledEvent', null, CHRONOCAL_CONFIG.defaultLocale),
     timeZone: session.time_zone || session.timeZone || Session.getScriptTimeZone()
   };
 }
@@ -488,13 +493,17 @@ function buildEventContextFromResult_(result) {
   return {
     eventId: result.event_id || '',
     calendarId: result.calendar_id || 'primary',
-    eventTitle: result.event_title || 'Evento sin título',
+    eventTitle: result.event_title || t_('common.untitledEvent', null, CHRONOCAL_CONFIG.defaultLocale),
     timeZone: result.time_zone || Session.getScriptTimeZone()
   };
 }
 
 function isUntitledEvent_(title) {
-  return !title || title === 'Evento sin título';
+  if (!title) {
+    return true;
+  }
+
+  return getUntitledEventTitles_().indexOf(title) !== -1;
 }
 
 function isSameEvent_(session, context) {

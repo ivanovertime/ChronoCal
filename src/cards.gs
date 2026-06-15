@@ -2,6 +2,7 @@ function buildBaseCard_(options) {
   var eventContext = options.eventContext || null;
   var sessions = options.sessions || [];
   var settings = options.settings || getSettings_();
+  var locale = getSupportedLocale_(options.locale || settings.userLocale) || CHRONOCAL_CONFIG.defaultLocale;
   var entries = buildTrackingEntries_(eventContext, sessions);
 
   var cardBuilder = CardService.newCardBuilder();
@@ -11,21 +12,22 @@ function buildBaseCard_(options) {
     emptySection.addWidget(
       CardService.newDecoratedText()
         .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.CLOCK))
-        .setText('Sin eventos en seguimiento')
-        .setBottomLabel('Abre un evento de Calendar y pulsa iniciar.')
+        .setText(t_('card.emptyTrackingTitle', null, locale))
+        .setBottomLabel(t_('card.emptyTrackingBody', null, locale))
         .setWrapText(true)
     );
     cardBuilder.addSection(emptySection);
-    cardBuilder.addSection(buildFooterSection_());
+    cardBuilder.addSection(buildGeneralActionsSection_(sessions, settings, locale));
+    cardBuilder.addSection(buildFooterSection_(locale));
     return cardBuilder.build();
   }
 
   for (var i = 0; i < entries.length; i++) {
-    cardBuilder.addSection(buildEntrySection_(entries[i], settings));
+    cardBuilder.addSection(buildEntrySection_(entries[i], settings, locale));
   }
 
-  cardBuilder.addSection(buildGeneralActionsSection_(sessions, settings));
-  cardBuilder.addSection(buildFooterSection_());
+  cardBuilder.addSection(buildGeneralActionsSection_(sessions, settings, locale));
+  cardBuilder.addSection(buildFooterSection_(locale));
 
   return cardBuilder.build();
 }
@@ -65,7 +67,7 @@ function entryKey_(calendarId, eventId) {
   return (calendarId || 'primary') + '::' + (eventId || '');
 }
 
-function buildEntrySection_(entry, settings) {
+function buildEntrySection_(entry, settings, locale) {
   var context = entry.context;
   var session = entry.session;
   var status = session ? session.status : 'NONE';
@@ -73,80 +75,85 @@ function buildEntrySection_(entry, settings) {
 
   var title = context.eventTitle && !isUntitledEvent_(context.eventTitle)
     ? context.eventTitle
-    : (entry.isOpen ? 'Evento actual' : 'Evento sin título');
+    : (entry.isOpen ? t_('card.currentEvent', null, locale) : t_('common.untitledEvent', null, locale));
 
   section.addWidget(
     CardService.newDecoratedText()
       .setStartIcon(CardService.newIconImage().setIcon(statusIcon_(status)))
-      .setTopLabel(statusLabel_(status) + (entry.isOpen ? ' · abierto' : ''))
+      .setTopLabel(statusLabel_(status, locale) + (entry.isOpen ? (' · ' + t_('card.openSuffix', null, locale)) : ''))
       .setText(title)
-      .setBottomLabel('Tiempo: ' + (session ? formatDuration_(calculateSessionDurationMs_(session)) : '00:00:00'))
+      .setBottomLabel(t_('card.timeLabel', null, locale) + ': ' + (session ? formatDuration_(calculateSessionDurationMs_(session)) : '00:00:00'))
       .setWrapText(true)
   );
 
-  section.addWidget(buildEntryActions_(status, context, settings));
+  section.addWidget(buildEntryActions_(status, context, settings, locale));
 
   return section;
 }
 
-function buildEntryActions_(status, context, settings) {
+function buildEntryActions_(status, context, settings, locale) {
   var buttons = CardService.newButtonSet();
 
   if (status === 'RUNNING') {
-    buttons.addButton(createIconButton_('pause', 'Pausar', 'onPauseTracking', context));
-    buttons.addButton(createIconButton_('stop', 'Detener', 'onStopTracking', context));
+    buttons.addButton(createIconButton_('pause', t_('action.pause', null, locale), 'onPauseTracking', context));
+    buttons.addButton(createIconButton_('stop', t_('action.stop', null, locale), 'onStopTracking', context));
   } else if (status === 'PAUSED') {
-    buttons.addButton(createIconButton_('play_arrow', 'Reanudar', 'onResumeTracking', context));
-    buttons.addButton(createIconButton_('stop', 'Detener', 'onStopTracking', context));
+    buttons.addButton(createIconButton_('play_arrow', t_('action.resume', null, locale), 'onResumeTracking', context));
+    buttons.addButton(createIconButton_('stop', t_('action.stop', null, locale), 'onStopTracking', context));
   } else if (status === 'STOPPED') {
-    buttons.addButton(createIconButton_('play_arrow', 'Reanudar', 'onResumeTracking', context));
+    buttons.addButton(createIconButton_('play_arrow', t_('action.resume', null, locale), 'onResumeTracking', context));
     if (settings.writeDescription) {
-      buttons.addButton(createIconButton_('save', 'Guardar en la descripción del evento', 'onSaveSession', context));
+      buttons.addButton(createIconButton_('save', t_('action.saveToEventDescription', null, locale), 'onSaveSession', context));
     }
-    buttons.addButton(createIconButton_('table_chart', 'Exportar a Google Sheets', 'onExportSessionToSheets', context));
-    buttons.addButton(createIconButton_('delete', 'Descartar', 'onDiscardSession', context));
+    buttons.addButton(createIconButton_('table_chart', t_('action.exportToSheets', null, locale), 'onExportSessionToSheets', context));
+    buttons.addButton(createIconButton_('delete', t_('action.discard', null, locale), 'onDiscardSession', context));
   } else {
-    buttons.addButton(createIconButton_('play_arrow', 'Iniciar', 'onStartTracking', context));
+    buttons.addButton(createIconButton_('play_arrow', t_('action.start', null, locale), 'onStartTracking', context));
   }
 
   return buttons;
 }
 
-function buildGeneralActionsSection_(sessions, settings) {
-  var section = CardService.newCardSection().setHeader('Acciones generales');
+function buildGeneralActionsSection_(sessions, settings, locale) {
+  var section = CardService.newCardSection().setHeader(t_('card.generalActions', null, locale));
   var buttons = CardService.newButtonSet();
 
-  buttons.addButton(createGlobalIconButton_('pause', 'Pausar todo', 'onPauseAll'));
-  buttons.addButton(createGlobalIconButton_('stop', 'Detener todo', 'onStopAll'));
-  buttons.addButton(createGlobalIconButton_('table_chart', 'Exportar a Google Sheets', 'onExportToSheets'));
-  buttons.addButton(createGlobalIconButton_('refresh', 'Actualizar tiempos', 'onRefreshCard'));
-  buttons.addButton(createGlobalIconButton_(settings.writeDescription ? 'edit' : 'edit_off', settings.writeDescription ? 'Modificar descripción: activado' : 'Modificar descripción: desactivado', 'onToggleDescriptionMode'));
+  buttons.addButton(createGlobalIconButton_('pause', t_('action.pauseAll', null, locale), 'onPauseAll'));
+  buttons.addButton(createGlobalIconButton_('stop', t_('action.stopAll', null, locale), 'onStopAll'));
+  buttons.addButton(createGlobalIconButton_('table_chart', t_('action.exportToSheets', null, locale), 'onExportToSheets'));
+  buttons.addButton(createGlobalIconButton_('refresh', t_('action.refreshTimes', null, locale), 'onRefreshCard'));
+  buttons.addButton(createGlobalIconButton_(settings.writeDescription ? 'edit' : 'edit_off', settings.writeDescription
+    ? t_('action.descriptionEnabled', null, locale)
+    : t_('action.descriptionDisabled', null, locale), 'onToggleDescriptionMode'));
+  buttons.addButton(createGlobalIconButton_('translate', locale === 'es'
+    ? t_('action.languageSwitchToEnglish', null, locale)
+    : t_('action.languageSwitchToSpanish', null, locale), 'onToggleLanguage'));
 
   section.addWidget(buttons);
   return section;
 }
 
-function buildFooterSection_() {
+function buildFooterSection_(locale) {
   var section = CardService.newCardSection();
   section.addWidget(
     CardService.newTextParagraph().setText(
-      'Docs'
+      t_('common.docs', null, locale)
     )
   );
   return section;
 }
 
-function statusLabel_(status) {
+function statusLabel_(status, locale) {
   if (status === 'RUNNING') {
-    return 'En curso';
+    return t_('status.running', null, locale);
   }
   if (status === 'PAUSED') {
-    return 'Pausado';
+    return t_('status.paused', null, locale);
   }
   if (status === 'STOPPED') {
-    return 'Detenido';
+    return t_('status.stopped', null, locale);
   }
-  return 'Sin iniciar';
+  return t_('status.notStarted', null, locale);
 }
 
 function statusIcon_(status) {

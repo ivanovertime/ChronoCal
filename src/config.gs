@@ -6,7 +6,8 @@ var CHRONOCAL_CONFIG = {
   settingsPropertyKey: 'CHRONOCAL_SETTINGS',
   descriptionTag: '⌛ Duración Real:',
   defaultSheetName: 'ChronoCal',
-  defaultStopMode: 'DESCRIPTION'
+  defaultStopMode: 'DESCRIPTION',
+  defaultLocale: 'es'
 };
 
 function getDefaultSettings_() {
@@ -15,19 +16,25 @@ function getDefaultSettings_() {
     writeDescription: true,
     sheetsSpreadsheetId: '',
     sheetsSpreadsheetUrl: '',
-    sheetsSheetName: CHRONOCAL_CONFIG.defaultSheetName
+    sheetsSheetName: CHRONOCAL_CONFIG.defaultSheetName,
+    userLocale: CHRONOCAL_CONFIG.defaultLocale,
+    localeSource: 'auto'
   };
 }
 
 function normalizeSettings_(settings) {
   var defaults = getDefaultSettings_();
   var source = settings || {};
+  var locale = getSupportedLocale_(source.userLocale) || defaults.userLocale;
+  var localeSource = source.localeSource === 'manual' ? 'manual' : 'auto';
 
   return {
     stopMode: source.stopMode || defaults.stopMode,
     writeDescription: source.writeDescription !== false,
     sheetsSpreadsheetId: source.sheetsSpreadsheetId || '',
     sheetsSpreadsheetUrl: source.sheetsSpreadsheetUrl || '',
-    sheetsSheetName: source.sheetsSheetName || defaults.sheetsSheetName
+    sheetsSheetName: source.sheetsSheetName || defaults.sheetsSheetName,
+    userLocale: locale,
+    localeSource: localeSource
   };
 }

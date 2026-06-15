@@ -1,15 +1,4 @@
-var CHRONOCAL_SHEET_HEADERS = [
-  'Exportado',
-  'Evento',
-  'Calendario',
-  'Estado',
-  'Duración',
-  'Duración (min)',
-  'Inicio',
-  'Fin'
-];
-
-function getOrCreateExportSpreadsheet_(settings) {
+function getOrCreateExportSpreadsheet_(settings, locale) {
   var spreadsheet = null;
 
   if (settings.sheetsSpreadsheetId) {
@@ -21,7 +10,7 @@ function getOrCreateExportSpreadsheet_(settings) {
   }
 
   if (!spreadsheet) {
-    spreadsheet = SpreadsheetApp.create('ChronoCal · Registro de tiempo');
+    spreadsheet = SpreadsheetApp.create(t_('sheet.spreadsheetTitle', null, locale));
     settings.sheetsSpreadsheetId = spreadsheet.getId();
     settings.sheetsSpreadsheetUrl = spreadsheet.getUrl();
     saveSettings_(settings);
@@ -30,19 +19,20 @@ function getOrCreateExportSpreadsheet_(settings) {
   return spreadsheet;
 }
 
-function getOrCreateExportSheet_(spreadsheet, sheetName) {
+function getOrCreateExportSheet_(spreadsheet, sheetName, locale) {
+  var headers = getSheetHeaders_(locale);
   var sheet = spreadsheet.getSheetByName(sheetName) || spreadsheet.insertSheet(sheetName);
 
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow(CHRONOCAL_SHEET_HEADERS);
-    sheet.getRange(1, 1, 1, CHRONOCAL_SHEET_HEADERS.length).setFontWeight('bold');
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
     sheet.setFrozenRows(1);
   }
 
   return sheet;
 }
 
-function buildSessionExportRow_(session, exportedAtIso) {
+function buildSessionExportRow_(session, exportedAtIso, locale) {
   var durationMs = calculateSessionDurationMs_(session);
   var startIso = session.started_at_iso || '';
   var endIso = session.status === 'STOPPED'
@@ -51,9 +41,9 @@ function buildSessionExportRow_(session, exportedAtIso) {
 
   return [
     exportedAtIso,
-    session.event_title || 'Evento sin título',
+    session.event_title || t_('common.untitledEvent', null, locale),
     session.calendar_id || 'primary',
-    statusLabel_(session.status),
+    statusLabel_(session.status, locale),
     formatDuration_(durationMs),
     Math.round(durationMs / 60000),
     startIso,
@@ -61,7 +51,8 @@ function buildSessionExportRow_(session, exportedAtIso) {
   ];
 }
 
-function exportSessionsToSheets_(sessionsToExport) {
+function exportSessionsToSheets_(sessionsToExport, locale) {
+  var activeLocale = getSupportedLocale_(locale) || CHRONOCAL_CONFIG.defaultLocale;
   var list = (sessionsToExport || []).filter(function(session) {
     return Boolean(session);
   });
@@ -74,15 +65,16 @@ function exportSessionsToSheets_(sessionsToExport) {
   }
 
   var settings = getSettings_();
-  var spreadsheet = getOrCreateExportSpreadsheet_(settings);
-  var sheet = getOrCreateExportSheet_(spreadsheet, settings.sheetsSheetName);
+  var spreadsheet = getOrCreateExportSpreadsheet_(settings, activeLocale);
+  var sheet = getOrCreateExportSheet_(spreadsheet, settings.sheetsSheetName, activeLocale);
   var exportedAtIso = new Date().toISOString();
+  var headers = getSheetHeaders_(activeLocale);
 
   var rows = list.map(function(session) {
-    return buildSessionExportRow_(session, exportedAtIso);
+    return buildSessionExportRow_(session, exportedAtIso, activeLocale);
   });
 
-  sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, CHRONOCAL_SHEET_HEADERS.length).setValues(rows);
+  sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, headers.length).setValues(rows);
 
   return {
     count: rows.length,

@@ -1,0 +1,304 @@
+var CHRONOCAL_I18N = {
+  es: {
+    common: {
+      untitledEvent: 'Evento sin titulo',
+      docs: 'Docs'
+    },
+    card: {
+      emptyTrackingTitle: 'Sin eventos en seguimiento',
+      emptyTrackingBody: 'Abre un evento de Calendar y pulsa iniciar.',
+      currentEvent: 'Evento actual',
+      openSuffix: 'abierto',
+      timeLabel: 'Tiempo',
+      generalActions: 'Acciones generales'
+    },
+    action: {
+      pause: 'Pausar',
+      stop: 'Detener',
+      resume: 'Reanudar',
+      saveToEventDescription: 'Guardar en la descripcion del evento',
+      exportToSheets: 'Exportar a Google Sheets',
+      discard: 'Descartar',
+      start: 'Iniciar',
+      pauseAll: 'Pausar todo',
+      stopAll: 'Detener todo',
+      refreshTimes: 'Actualizar tiempos',
+      descriptionEnabled: 'Modificar descripcion: activado',
+      descriptionDisabled: 'Modificar descripcion: desactivado',
+      languageSwitchToEnglish: 'Idioma: cambiar a English',
+      languageSwitchToSpanish: 'Language: switch to Espanol'
+    },
+    status: {
+      running: 'En curso',
+      paused: 'Pausado',
+      stopped: 'Detenido',
+      notStarted: 'Sin iniciar'
+    },
+    notify: {
+      panelUpdated: 'Panel actualizado.',
+      cannotIdentifyCurrentEvent: 'No se pudo identificar el evento actual.',
+      sessionAlreadyRunning: 'Esta sesion ya esta en ejecucion.',
+      trackingResumed: 'Tracking reanudado.',
+      trackingStarted: 'Tracking iniciado.',
+      noRunningSessionForEvent: 'No hay una sesion activa en ejecucion para este evento.',
+      trackingPaused: 'Tracking pausado.',
+      noPausedSessionForEvent: 'No hay una sesion pausada para este evento.',
+      noActiveSessionForEvent: 'No hay una sesion activa para este evento.',
+      sessionStoppedSavePrompt: 'Sesion detenida. Pulsa guardar para escribirla en el evento.',
+      noSessionToSave: 'No hay una sesion para guardar en este evento.',
+      descriptionDisabledExportInstead: 'La modificacion de descripcion esta desactivada. Exporta a Sheets en su lugar.',
+      eventUpdated: 'Evento actualizado: {{durationLine}}',
+      saveToEventFailed: 'No se pudo guardar en el evento.',
+      sessionKept: 'Sesion conservada.',
+      sessionDiscarded: 'Sesion descartada.',
+      pausedCount: 'Pausados {{count}} eventos.',
+      noRunningEvents: 'No hay eventos en ejecucion.',
+      stoppedCount: 'Detenidos {{count}} eventos.',
+      noActiveEvents: 'No hay eventos activos.',
+      stopBeforeExport: 'Deten un evento antes de exportarlo a Sheets.',
+      exportManySuccess: 'Exportadas {{count}} sesiones a Google Sheets.',
+      exportFailed: 'No se pudo exportar a Sheets.',
+      sessionsKept: 'Sesiones conservadas.',
+      noSessionToExport: 'No hay una sesion para exportar en este evento.',
+      exportOneSuccess: 'Sesion exportada a Google Sheets ({{count}}).',
+      descriptionWriteEnabled: 'Se podra modificar la descripcion del evento.',
+      descriptionWriteDisabled: 'No se modificara la descripcion del evento.',
+      languageChangedEnglish: 'Idioma cambiado a English.',
+      languageChangedSpanish: 'Language switched to Espanol.',
+      refreshed: 'Actualizado.'
+    },
+    calendar: {
+      eventNotFound: 'No se encontro el evento activo o no tienes permisos suficientes.'
+    },
+    duration: {
+      tag: 'Duracion real:',
+      dateLabel: 'Fecha'
+    },
+    sheet: {
+      exported: 'Exportado',
+      event: 'Evento',
+      calendar: 'Calendario',
+      status: 'Estado',
+      duration: 'Duracion',
+      durationMinutes: 'Duracion (min)',
+      start: 'Inicio',
+      end: 'Fin',
+      spreadsheetTitle: 'ChronoCal - Registro de tiempo'
+    }
+  },
+  en: {
+    common: {
+      untitledEvent: 'Untitled event',
+      docs: 'Docs'
+    },
+    card: {
+      emptyTrackingTitle: 'No tracked events',
+      emptyTrackingBody: 'Open a Calendar event and press start.',
+      currentEvent: 'Current event',
+      openSuffix: 'open',
+      timeLabel: 'Time',
+      generalActions: 'General actions'
+    },
+    action: {
+      pause: 'Pause',
+      stop: 'Stop',
+      resume: 'Resume',
+      saveToEventDescription: 'Save to event description',
+      exportToSheets: 'Export to Google Sheets',
+      discard: 'Discard',
+      start: 'Start',
+      pauseAll: 'Pause all',
+      stopAll: 'Stop all',
+      refreshTimes: 'Refresh times',
+      descriptionEnabled: 'Edit description: enabled',
+      descriptionDisabled: 'Edit description: disabled',
+      languageSwitchToEnglish: 'Language: switch to English',
+      languageSwitchToSpanish: 'Idioma: cambiar a Espanol'
+    },
+    status: {
+      running: 'Running',
+      paused: 'Paused',
+      stopped: 'Stopped',
+      notStarted: 'Not started'
+    },
+    notify: {
+      panelUpdated: 'Panel refreshed.',
+      cannotIdentifyCurrentEvent: 'Could not identify the current event.',
+      sessionAlreadyRunning: 'This session is already running.',
+      trackingResumed: 'Tracking resumed.',
+      trackingStarted: 'Tracking started.',
+      noRunningSessionForEvent: 'There is no running session for this event.',
+      trackingPaused: 'Tracking paused.',
+      noPausedSessionForEvent: 'There is no paused session for this event.',
+      noActiveSessionForEvent: 'There is no active session for this event.',
+      sessionStoppedSavePrompt: 'Session stopped. Press save to write it to the event.',
+      noSessionToSave: 'There is no session to save for this event.',
+      descriptionDisabledExportInstead: 'Description editing is disabled. Export to Sheets instead.',
+      eventUpdated: 'Event updated: {{durationLine}}',
+      saveToEventFailed: 'Could not save to the event.',
+      sessionKept: 'Session kept.',
+      sessionDiscarded: 'Session discarded.',
+      pausedCount: 'Paused {{count}} events.',
+      noRunningEvents: 'No events are currently running.',
+      stoppedCount: 'Stopped {{count}} events.',
+      noActiveEvents: 'There are no active events.',
+      stopBeforeExport: 'Stop an event before exporting to Sheets.',
+      exportManySuccess: 'Exported {{count}} sessions to Google Sheets.',
+      exportFailed: 'Could not export to Sheets.',
+      sessionsKept: 'Sessions were kept.',
+      noSessionToExport: 'There is no session to export for this event.',
+      exportOneSuccess: 'Session exported to Google Sheets ({{count}}).',
+      descriptionWriteEnabled: 'Event description can now be modified.',
+      descriptionWriteDisabled: 'Event description will not be modified.',
+      languageChangedEnglish: 'Language switched to English.',
+      languageChangedSpanish: 'Idioma cambiado a Espanol.',
+      refreshed: 'Refreshed.'
+    },
+    calendar: {
+      eventNotFound: 'Active event was not found or permission is missing.'
+    },
+    duration: {
+      tag: 'Actual duration:',
+      dateLabel: 'Date'
+    },
+    sheet: {
+      exported: 'Exported',
+      event: 'Event',
+      calendar: 'Calendar',
+      status: 'Status',
+      duration: 'Duration',
+      durationMinutes: 'Duration (min)',
+      start: 'Start',
+      end: 'End',
+      spreadsheetTitle: 'ChronoCal - Time log'
+    }
+  }
+};
+
+function getSupportedLocale_(rawLocale) {
+  var normalized = String(rawLocale || '').toLowerCase().replace('_', '-');
+  var lang = normalized.split('-')[0];
+
+  if (lang === 'en' || lang === 'es') {
+    return lang;
+  }
+
+  return '';
+}
+
+function extractLocaleFromEvent_(e) {
+  var parameters = parseCardParameters_(e);
+
+  return getSupportedLocale_(firstNonEmpty_([
+    pickByPaths_(e, ['commonEventObject.userLocale']),
+    pickByPaths_(e, ['commonEventObject.hostAppLocale']),
+    pickByPaths_(e, ['commonEventObject.platformSpecificData.userLocale']),
+    pickByPaths_(e, ['commonEventObject.platformSpecificData.locale']),
+    pickByPaths_(e, ['commonEventObject.hostAppData.userLocale']),
+    pickByPaths_(e, ['commonEventObject.hostAppData.locale']),
+    parameters.userLocale,
+    parameters.locale,
+    pickByPaths_(e, ['userLocale']),
+    pickByPaths_(e, ['locale'])
+  ], ''));
+}
+
+function resolveLocale_(e, settings) {
+  var source = settings || getSettings_();
+  var stored = getSupportedLocale_(source.userLocale);
+
+  // Respect explicit user selection, and also preserve legacy stored non-default
+  // values even if localeSource was not yet set to manual.
+  if (stored && (source.localeSource === 'manual' || stored !== CHRONOCAL_CONFIG.defaultLocale)) {
+    return stored;
+  }
+
+  var detected = extractLocaleFromEvent_(e);
+  if (detected) {
+    return detected;
+  }
+
+  if (stored) {
+    return stored;
+  }
+
+  return CHRONOCAL_CONFIG.defaultLocale;
+}
+
+function getCurrentLocale_(e) {
+  return resolveLocale_(e, getSettings_());
+}
+
+function getLocaleBundle_(locale) {
+  return CHRONOCAL_I18N[getSupportedLocale_(locale) || CHRONOCAL_CONFIG.defaultLocale] || CHRONOCAL_I18N[CHRONOCAL_CONFIG.defaultLocale];
+}
+
+function getByI18nPath_(bundle, keyPath) {
+  var parts = String(keyPath || '').split('.');
+  var cursor = bundle;
+
+  for (var i = 0; i < parts.length; i++) {
+    if (!cursor || typeof cursor !== 'object' || !(parts[i] in cursor)) {
+      return '';
+    }
+    cursor = cursor[parts[i]];
+  }
+
+  return typeof cursor === 'string' ? cursor : '';
+}
+
+function t_(key, params, locale) {
+  var lang = getSupportedLocale_(locale) || CHRONOCAL_CONFIG.defaultLocale;
+  var template = getByI18nPath_(getLocaleBundle_(lang), key);
+
+  if (!template && lang !== CHRONOCAL_CONFIG.defaultLocale) {
+    template = getByI18nPath_(getLocaleBundle_(CHRONOCAL_CONFIG.defaultLocale), key);
+  }
+
+  if (!template) {
+    return key;
+  }
+
+  var values = params || {};
+  return template.replace(/\{\{\s*([\w.]+)\s*\}\}/g, function(match, token) {
+    return token in values ? String(values[token]) : '';
+  });
+}
+
+function getDurationTag_(locale) {
+  return t_('duration.tag', null, locale);
+}
+
+function getDurationTagVariants_() {
+  return [
+    getDurationTag_('es'),
+    getDurationTag_('en'),
+    CHRONOCAL_CONFIG.descriptionTag
+  ].filter(function(value, index, list) {
+    return Boolean(value) && list.indexOf(value) === index;
+  });
+}
+
+function getUntitledEventTitles_() {
+  return [
+    t_('common.untitledEvent', null, 'es'),
+    t_('common.untitledEvent', null, 'en')
+  ];
+}
+
+function getDateFormatPatternForLocale_(locale) {
+  return getSupportedLocale_(locale) === 'en' ? 'yyyy-MM-dd' : 'dd/MM/yyyy';
+}
+
+function getSheetHeaders_(locale) {
+  return [
+    t_('sheet.exported', null, locale),
+    t_('sheet.event', null, locale),
+    t_('sheet.calendar', null, locale),
+    t_('sheet.status', null, locale),
+    t_('sheet.duration', null, locale),
+    t_('sheet.durationMinutes', null, locale),
+    t_('sheet.start', null, locale),
+    t_('sheet.end', null, locale)
+  ];
+}

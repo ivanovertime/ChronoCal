@@ -354,10 +354,10 @@ function resolveCalendarEventWithDiagnostics_(context) {
   };
 }
 
-function getCalendarEventResource_(context) {
+function getCalendarEventResource_(context, locale) {
   var resolved = resolveCalendarEvent_(context);
   if (!resolved || !resolved.event) {
-    throw new Error('No se encontró el evento activo o no tienes permisos suficientes.');
+    throw new Error(t_('calendar.eventNotFound', null, locale || CHRONOCAL_CONFIG.defaultLocale));
   }
 
   return resolved;
@@ -369,11 +369,11 @@ function enrichEventContextFromCalendar_(context) {
   }
 
   try {
-    var resolved = getCalendarEventResource_(context);
+    var resolved = getCalendarEventResource_(context, CHRONOCAL_CONFIG.defaultLocale);
     var event = resolved.event;
     context.eventId = firstNonEmpty_([event.id, context.eventId], context.eventId);
     context.calendarId = firstNonEmpty_([resolved.calendarId, context.calendarId], context.calendarId);
-    context.eventTitle = firstNonEmpty_([event.summary, context.eventTitle], 'Evento sin título');
+    context.eventTitle = firstNonEmpty_([event.summary, context.eventTitle], t_('common.untitledEvent', null, CHRONOCAL_CONFIG.defaultLocale));
     context.timeZone = firstNonEmpty_([
       event.start && event.start.timeZone,
       event.end && event.end.timeZone,
@@ -386,12 +386,13 @@ function enrichEventContextFromCalendar_(context) {
   return context;
 }
 
-function buildDurationLine_(durationMs, stoppedAt, timeZone) {
-  return CHRONOCAL_CONFIG.descriptionTag + ' ' + formatDuration_(durationMs) + ' (Fecha: ' + formatDateForUser_(stoppedAt, timeZone) + ')';
+function buildDurationLine_(durationMs, stoppedAt, timeZone, locale) {
+  return getDurationTag_(locale) + ' ' + formatDuration_(durationMs) + ' (' + t_('duration.dateLabel', null, locale) + ': ' + formatDateForUser_(stoppedAt, timeZone, locale) + ')';
 }
 
-function updateEventDescription_(context, durationMs) {
-  var resolved = getCalendarEventResource_(context);
+function updateEventDescription_(context, durationMs, locale) {
+  var activeLocale = getSupportedLocale_(locale) || CHRONOCAL_CONFIG.defaultLocale;
+  var resolved = getCalendarEventResource_(context, activeLocale);
   var event = resolved.event;
   var targetCalendarId = resolved.calendarId;
   var targetEventId = event.id;
@@ -402,8 +403,11 @@ function updateEventDescription_(context, durationMs) {
     event.end && event.end.timeZone,
     context.timeZone
   ], Session.getScriptTimeZone());
-  var durationLine = buildDurationLine_(durationMs, stopAt, effectiveTimeZone);
-  var pattern = new RegExp('^' + escapeRegex_(CHRONOCAL_CONFIG.descriptionTag) + '.*$', 'm');
+  var durationLine = buildDurationLine_(durationMs, stopAt, effectiveTimeZone, activeLocale);
+  var tags = getDurationTagVariants_().map(function(tag) {
+    return escapeRegex_(tag);
+  });
+  var pattern = new RegExp('^(' + tags.join('|') + ').*$', 'm');
   var nextDescription = originalDescription;
 
   if (pattern.test(originalDescription)) {
@@ -419,7 +423,7 @@ function updateEventDescription_(context, durationMs) {
   }, targetCalendarId, targetEventId);
 
   return {
-    eventTitle: firstNonEmpty_([event.summary, context.eventTitle], 'Evento sin título'),
+    eventTitle: firstNonEmpty_([event.summary, context.eventTitle], t_('common.untitledEvent', null, activeLocale)),
     durationLine: durationLine,
     stoppedAt: stopAt.toISOString()
   };
