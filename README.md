@@ -70,6 +70,11 @@ For a full deployment workflow, see [docs/CLASP_SETUP.md](docs/CLASP_SETUP.md).
 - OAuth scopes include Calendar add-on execution, Calendar read/write, and Sheets.
 - Description writing can be toggled from the card actions.
 
+## Icon source attribution
+
+- Add-on logo icon source page: [Google Fonts Material Symbols Outlined - punch_clock](https://fonts.google.com/icons?selected=Material+Symbols+Outlined:punch_clock:FILL@0;wght@700;GRAD@0;opsz@40&icon.style=Outlined&icon.query=hour&icon.size=32&icon.color=%23789DE5)
+- Direct logo asset used in the manifest: [punch_clock 48px SVG](https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/punch_clock/default/48px.svg)
+
 ## Documentation
 
 - Product requirements document: [docs/prd/README.md](docs/prd/README.md)
