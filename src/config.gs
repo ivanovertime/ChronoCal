@@ -1,5 +1,6 @@
 var CHRONOCAL_CONFIG = {
   sessionPropertyKey: 'CHRONOCAL_ACTIVE_SESSION',
+  lastResultPropertyKey: 'CHRONOCAL_LAST_RESULT',
   settingsPropertyKey: 'CHRONOCAL_SETTINGS',
   descriptionTag: '⌛ Duración Real:',
   defaultSheetName: 'ChronoCal',

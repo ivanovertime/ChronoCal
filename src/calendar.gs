@@ -18,7 +18,7 @@ function buildDurationLine_(durationMs, stoppedAt, timeZone) {
   return CHRONOCAL_CONFIG.descriptionTag + ' ' + formatDuration_(durationMs) + ' (Fecha: ' + formatDateForUser_(stoppedAt, timeZone) + ')';
 }
 
-function updateEventDescription_(context, session, durationMs) {
+function updateEventDescription_(context, durationMs) {
   var event = findTrackedEvent_(context);
   var originalDescription = event.getDescription() || '';
   var stopAt = new Date();

@@ -35,6 +35,18 @@ function clearActiveSession_() {
   deleteStoredValue_(CHRONOCAL_CONFIG.sessionPropertyKey);
 }
 
+function getLastResult_() {
+  return getStoredJson_(CHRONOCAL_CONFIG.lastResultPropertyKey);
+}
+
+function saveLastResult_(result) {
+  setStoredJson_(CHRONOCAL_CONFIG.lastResultPropertyKey, result);
+}
+
+function clearLastResult_() {
+  deleteStoredValue_(CHRONOCAL_CONFIG.lastResultPropertyKey);
+}
+
 function getSettings_() {
   return getStoredJson_(CHRONOCAL_CONFIG.settingsPropertyKey) || getDefaultSettings_();
 }
@@ -76,15 +88,74 @@ function parseCardParameters_(e) {
   return {};
 }
 
+function firstNonEmpty_(values, fallback) {
+  for (var i = 0; i < values.length; i++) {
+    var value = values[i];
+    if (value !== undefined && value !== null && value !== '') {
+      return value;
+    }
+  }
+
+  return fallback;
+}
+
 function getEventContext_(e) {
   var parameters = parseCardParameters_(e);
   var eventContext = e && e.calendar ? e.calendar : {};
+  var nestedEvent = eventContext.event || {};
+  var hostData = e && e.commonEventObject ? e.commonEventObject.hostAppData || {} : {};
+  var hostEvent = hostData.event || {};
 
   return {
-    eventId: parameters.eventId || eventContext.eventId || '',
-    calendarId: parameters.calendarId || eventContext.calendarId || 'primary',
-    eventTitle: parameters.eventTitle || eventContext.title || 'Evento sin título',
-    timeZone: parameters.timeZone || eventContext.timeZone || Session.getScriptTimeZone()
+    eventId: firstNonEmpty_([
+      parameters.eventId,
+      parameters.calendarEventId,
+      parameters.event_id,
+      parameters.id,
+      eventContext.eventId,
+      eventContext.calendarEventId,
+      eventContext.event_id,
+      eventContext.id,
+      nestedEvent.eventId,
+      nestedEvent.calendarEventId,
+      nestedEvent.event_id,
+      nestedEvent.id,
+      hostData.eventId,
+      hostData.calendarEventId,
+      hostEvent.eventId,
+      hostEvent.calendarEventId,
+      hostEvent.id
+    ], ''),
+    calendarId: firstNonEmpty_([
+      parameters.calendarId,
+      parameters.calendar_id,
+      eventContext.calendarId,
+      nestedEvent.calendarId,
+      hostData.calendarId,
+      hostEvent.calendarId
+    ], 'primary'),
+    eventTitle: firstNonEmpty_([
+      parameters.eventTitle,
+      parameters.title,
+      parameters.summary,
+      eventContext.eventTitle,
+      eventContext.title,
+      eventContext.summary,
+      nestedEvent.eventTitle,
+      nestedEvent.title,
+      nestedEvent.summary,
+      hostData.title,
+      hostData.summary,
+      hostEvent.title,
+      hostEvent.summary
+    ], 'Evento sin título'),
+    timeZone: firstNonEmpty_([
+      parameters.timeZone,
+      eventContext.timeZone,
+      nestedEvent.timeZone,
+      hostData.timeZone,
+      hostEvent.timeZone
+    ], Session.getScriptTimeZone())
   };
 }
 
@@ -99,6 +170,23 @@ function buildEventContextFromSession_(session) {
     eventTitle: session.event_title || 'Evento sin título',
     timeZone: session.timeZone || Session.getScriptTimeZone()
   };
+}
+
+function buildEventContextFromResult_(result) {
+  if (!result) {
+    return null;
+  }
+
+  return {
+    eventId: result.event_id || '',
+    calendarId: result.calendar_id || 'primary',
+    eventTitle: result.event_title || 'Evento sin título',
+    timeZone: result.time_zone || Session.getScriptTimeZone()
+  };
+}
+
+function isUntitledEvent_(title) {
+  return !title || title === 'Evento sin título';
 }
 
 function isSameEvent_(session, context) {
