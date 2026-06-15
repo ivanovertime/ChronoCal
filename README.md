@@ -220,3 +220,48 @@ La arquitectura se mantiene nativa dentro de Google:
 
 ChronoCal es viable como add-on de Google Calendar si se respeta el modelo real de Apps Script: UI declarativa, estado persistente por usuario, y actualizaciones por acciones. La propuesta de valor de privacidad sigue intacta, pero el MVP debe ser más sobrio: panel contextual, start/stop, persistencia y escritura en Calendar. El resto debe salir por fases.
 
+## **13. Desarrollo Local**
+
+### **13.1. Arranque del proyecto**
+
+1. Entra al directorio del proyecto.
+2. Activa `direnv` para cargar el shell de Nix.
+3. Entra al entorno con `nix develop --no-pure-eval` si no usas `direnv`.
+4. Inicia sesión en Apps Script con `npx @google/clasp login`.
+
+Comandos habituales:
+
+```bash
+cd /home/ivan/Source/ChronoCal
+direnv allow
+npx @google/clasp login
+```
+
+### **13.2. Subir el proyecto a Apps Script**
+
+1. Crea o vincula un proyecto de Apps Script con `clasp`.
+2. Sube los archivos con `npx @google/clasp push`.
+3. Abre el editor remoto si necesitas revisar configuración o despliegues.
+
+```bash
+npx @google/clasp create --type standalone --title "ChronoCal" --rootDir .
+npx @google/clasp push
+npx @google/clasp open
+```
+
+### **13.3. Cómo probarlo**
+
+1. Asegúrate de que el proyecto esté subido a Apps Script.
+2. Abre Google Calendar en escritorio.
+3. Abre un evento para ver el panel lateral de ChronoCal.
+4. Pulsa **Iniciar registro** y luego **Detener y guardar**.
+5. Verifica que la descripción del evento reciba la línea de duración real.
+6. Si cambias la configuración de Sheets o de fin de evento, repite la prueba sobre el mismo flujo.
+
+### **13.4. Qué validar en cada cambio**
+
+* Que el panel lateral siga abriendo desde un evento contextual.
+* Que el estado activo se recupere tras refrescar.
+* Que Stop escriba la duración en la descripción sin duplicar entradas.
+* Que el manifiesto siga usando solo los scopes activados por la funcionalidad.
+

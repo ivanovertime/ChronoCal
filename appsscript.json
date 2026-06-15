@@ -1,0 +1,26 @@
+{
+  "timeZone": "Etc/UTC",
+  "runtimeVersion": "V8",
+  "exceptionLogging": "STACKDRIVER",
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/calendar.addons.execute",
+    "https://www.googleapis.com/auth/calendar.addons.current.event.read",
+    "https://www.googleapis.com/auth/calendar.addons.current.event.write"
+  ],
+  "addOns": {
+    "common": {
+      "homepageTrigger": {
+        "runFunction": "buildHomeCard"
+      }
+    },
+    "calendar": {
+      "homepageTrigger": {
+        "runFunction": "buildHomeCard"
+      },
+      "eventOpenTrigger": {
+        "runFunction": "buildEventCard"
+      },
+      "currentEventAccess": "READ_WRITE"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+.git/**
+.direnv/**
+.devenv/**
+.envrc
+flake.nix
+flake.lock
+devenv.nix
+README.md
+CLASP_SETUP.md
