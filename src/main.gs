@@ -1,9 +1,10 @@
 function buildHomeCard(e) {
   var sessions = getSessions_();
   var lastResult = getLastResult_();
+  var eventContext = resolveCardEventContext_(e, sessions, lastResult);
 
   return buildBaseCard_({
-    eventContext: resolveCardEventContext_(e, sessions, lastResult),
+    eventContext: eventContext,
     sessions: sessions,
     lastResult: lastResult
   });
@@ -12,9 +13,10 @@ function buildHomeCard(e) {
 function buildEventCard(e) {
   var sessions = getSessions_();
   var lastResult = getLastResult_();
+  var eventContext = resolveCardEventContext_(e, sessions, lastResult);
 
   return buildBaseCard_({
-    eventContext: resolveCardEventContext_(e, sessions, lastResult),
+    eventContext: eventContext,
     sessions: sessions,
     lastResult: lastResult
   });
@@ -25,7 +27,7 @@ function onRefreshCard(e) {
 }
 
 function onStartTracking(e) {
-  var context = getEventContext_(e);
+  var context = enrichEventContextFromCalendar_(getEventContext_(e));
   var sessions = getSessions_();
   var currentSession = getSessionForEvent_(sessions, context);
   var runningSession = getRunningSession_(sessions);
@@ -134,7 +136,7 @@ function onResumeTracking(e) {
 }
 
 function onStopTracking(e) {
-  var context = getEventContext_(e);
+  var context = enrichEventContextFromCalendar_(getEventContext_(e));
   var sessions = getSessions_();
   var runningSession = getRunningSession_(sessions);
   var targetSession = getSessionForEvent_(sessions, context) || runningSession;
@@ -150,6 +152,7 @@ function onStopTracking(e) {
   var sessionContext = buildEventContextFromSession_(targetSession);
   var durationMs = calculateSessionDurationMs_(targetSession);
   var normalizedContext = sessionContext || resolveCardEventContext_(e, sessions, getLastResult_()) || context;
+  normalizedContext = enrichEventContextFromCalendar_(normalizedContext);
   var result = {
     event_id: normalizedContext.eventId,
     calendar_id: normalizedContext.calendarId,

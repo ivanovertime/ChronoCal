@@ -135,6 +135,37 @@ function formatDateForUser_(dateValue, timeZone) {
   return Utilities.formatDate(dateValue, timeZone || Session.getScriptTimeZone(), 'dd/MM/yyyy');
 }
 
+function getEventMetaCache_() {
+  return getStoredJson_(CHRONOCAL_CONFIG.eventMetaCachePropertyKey) || {};
+}
+
+function saveEventMetaCache_(cache) {
+  setStoredJson_(CHRONOCAL_CONFIG.eventMetaCachePropertyKey, cache || {});
+}
+
+function rememberEventMeta_(context) {
+  if (!context || !context.eventId || isUntitledEvent_(context.eventTitle)) {
+    return;
+  }
+
+  var cache = getEventMetaCache_();
+  cache[context.calendarId + '::' + context.eventId] = {
+    eventTitle: context.eventTitle,
+    timeZone: context.timeZone || Session.getScriptTimeZone(),
+    updatedAt: new Date().toISOString()
+  };
+  saveEventMetaCache_(cache);
+}
+
+function getCachedEventMeta_(calendarId, eventId) {
+  if (!eventId) {
+    return null;
+  }
+
+  var cache = getEventMetaCache_();
+  return cache[(calendarId || 'primary') + '::' + eventId] || null;
+}
+
 function parseCardParameters_(e) {
   if (!e) {
     return {};
@@ -162,64 +193,132 @@ function firstNonEmpty_(values, fallback) {
   return fallback;
 }
 
+function getByPath_(source, path) {
+  if (!source) {
+    return undefined;
+  }
+
+  var steps = String(path || '').split('.');
+  var cursor = source;
+  for (var i = 0; i < steps.length; i++) {
+    if (cursor === undefined || cursor === null || typeof cursor !== 'object' || !(steps[i] in cursor)) {
+      return undefined;
+    }
+    cursor = cursor[steps[i]];
+  }
+
+  return cursor;
+}
+
+function pickByPaths_(source, paths) {
+  var values = (paths || []).map(function(path) {
+    return getByPath_(source, path);
+  });
+
+  return firstNonEmpty_(values, '');
+}
+
+function sanitizeEventId_(value) {
+  var raw = String(value || '').trim();
+  if (!raw) {
+    return '';
+  }
+
+  // Calendar event IDs do not contain spaces or URL path separators.
+  if (raw.indexOf(' ') !== -1 || raw.indexOf('/') !== -1) {
+    return '';
+  }
+
+  return raw;
+}
+
 function getEventContext_(e) {
   var parameters = parseCardParameters_(e);
-  var eventContext = e && e.calendar ? e.calendar : {};
-  var nestedEvent = eventContext.event || {};
-  var hostData = e && e.commonEventObject ? e.commonEventObject.hostAppData || {} : {};
-  var hostEvent = hostData.event || {};
+  var rawEventId = firstNonEmpty_([
+    parameters.eventId,
+    parameters.calendarEventId,
+    parameters.event_id,
+    parameters.id,
+    pickByPaths_(e, [
+      'calendar.eventId',
+      'calendar.calendarEventId',
+      'calendar.id',
+      'calendar.event.eventId',
+      'calendar.event.calendarEventId',
+      'calendar.event.id',
+      'commonEventObject.hostAppData.eventId',
+      'commonEventObject.hostAppData.calendarEventId',
+      'commonEventObject.hostAppData.id',
+      'commonEventObject.hostAppData.event.eventId',
+      'commonEventObject.hostAppData.event.calendarEventId',
+      'commonEventObject.hostAppData.event.id',
+      'commonEventObject.platformSpecificData.eventId',
+      'commonEventObject.platformSpecificData.calendarEventId',
+      'commonEventObject.platformSpecificData.id',
+      'eventId',
+      'calendarEventId'
+    ])
+  ], '');
+  var eventId = sanitizeEventId_(rawEventId);
 
-  return {
-    eventId: firstNonEmpty_([
-      parameters.eventId,
-      parameters.calendarEventId,
-      parameters.event_id,
-      parameters.id,
-      eventContext.eventId,
-      eventContext.calendarEventId,
-      eventContext.event_id,
-      eventContext.id,
-      nestedEvent.eventId,
-      nestedEvent.calendarEventId,
-      nestedEvent.event_id,
-      nestedEvent.id,
-      hostData.eventId,
-      hostData.calendarEventId,
-      hostEvent.eventId,
-      hostEvent.calendarEventId,
-      hostEvent.id
-    ], ''),
-    calendarId: firstNonEmpty_([
-      parameters.calendarId,
-      parameters.calendar_id,
-      eventContext.calendarId,
-      nestedEvent.calendarId,
-      hostData.calendarId,
-      hostEvent.calendarId
-    ], 'primary'),
-    eventTitle: firstNonEmpty_([
-      parameters.eventTitle,
-      parameters.title,
-      parameters.summary,
-      eventContext.eventTitle,
-      eventContext.title,
-      eventContext.summary,
-      nestedEvent.eventTitle,
-      nestedEvent.title,
-      nestedEvent.summary,
-      hostData.title,
-      hostData.summary,
-      hostEvent.title,
-      hostEvent.summary
-    ], 'Evento sin título'),
-    timeZone: firstNonEmpty_([
-      parameters.timeZone,
-      eventContext.timeZone,
-      nestedEvent.timeZone,
-      hostData.timeZone,
-      hostEvent.timeZone
-    ], Session.getScriptTimeZone())
+  var calendarId = firstNonEmpty_([
+    parameters.calendarId,
+    parameters.calendar_id,
+    pickByPaths_(e, [
+      'calendar.calendarId',
+      'calendar.event.calendarId',
+      'commonEventObject.hostAppData.calendarId',
+      'commonEventObject.hostAppData.event.calendarId',
+      'commonEventObject.platformSpecificData.calendarId',
+      'calendarId'
+    ])
+  ], 'primary');
+
+  var eventTitle = firstNonEmpty_([
+    parameters.eventTitle,
+    parameters.summary,
+    pickByPaths_(e, [
+      'calendar.eventTitle',
+      'calendar.title',
+      'calendar.summary',
+      'calendar.event.eventTitle',
+      'calendar.event.title',
+      'calendar.event.summary',
+      'commonEventObject.hostAppData.eventTitle',
+      'commonEventObject.hostAppData.title',
+      'commonEventObject.hostAppData.summary',
+      'commonEventObject.hostAppData.event.eventTitle',
+      'commonEventObject.hostAppData.event.title',
+      'commonEventObject.hostAppData.event.summary',
+      'commonEventObject.platformSpecificData.eventTitle',
+      'commonEventObject.platformSpecificData.title',
+      'commonEventObject.platformSpecificData.summary'
+    ])
+  ], '');
+
+  var timeZone = firstNonEmpty_([
+    parameters.timeZone,
+    pickByPaths_(e, [
+      'calendar.timeZone',
+      'calendar.event.timeZone',
+      'commonEventObject.hostAppData.timeZone',
+      'commonEventObject.hostAppData.event.timeZone',
+      'commonEventObject.platformSpecificData.timeZone',
+      'timeZone'
+    ])
+  ], Session.getScriptTimeZone());
+
+  var cachedMeta = getCachedEventMeta_(calendarId, eventId);
+  var context = {
+    eventId: eventId,
+    calendarId: calendarId,
+    eventTitle: firstNonEmpty_([eventTitle, cachedMeta && cachedMeta.eventTitle], 'Evento sin título'),
+    timeZone: firstNonEmpty_([timeZone, cachedMeta && cachedMeta.timeZone], Session.getScriptTimeZone())
   };
+
+  context = enrichEventContextFromCalendar_(context);
+  rememberEventMeta_(context);
+  return context;
 }
 
 function buildEventContextFromSession_(session) {
