@@ -1,154 +1,222 @@
-# **PRD: ChronoCal \- Local Time Tracker para Google Calendar**
+# **PRD: ChronoCal - Local Time Tracker para Google Calendar**
 
 | Propiedad | Detalle |
 | :---- | :---- |
-| **Nombre del Producto** | ChronoCal (Add-on Local de Tracking para Google Workspace) |
+| **Nombre del Producto** | ChronoCal (Add-on local de tracking para Google Workspace) |
 | **Fecha** | Junio de 2026 |
 | **Autor** | Product Manager Expert |
-| **Estado** | Listo para Revisión de Ingeniería (Ready for Dev) |
-| **Versión** | v1.0 |
+| **Estado** | Revisado para Ingeniería |
+| **Versión** | v1.1 |
 
-## **1\. Introducción y Visión del Producto**
+## **1. Introducción y Visión del Producto**
 
 ### **1.1. Contexto y Problema**
 
-Los profesionales que gestionan su día en Google Calendar y Google Tasks a menudo necesitan registrar cuánto tiempo real les toma completar sus tareas y eventos. Las soluciones existentes (como Toggl o Clockify) requieren el uso de plataformas y bases de datos externas de terceros. Esto introduce:
+Los profesionales que gestionan su día en Google Calendar y Google Tasks suelen necesitar registrar el tiempo real dedicado a reuniones, bloques de trabajo y tareas. Muchas soluciones existentes dependen de plataformas externas, lo que introduce riesgos de privacidad, costes adicionales y duplicidad de herramientas.
 
-1. **Riesgos de privacidad:** Transferencia de agendas y datos sensibles fuera del entorno de Google.  
-2. **Costes o dependencias:** Modelos de suscripción y dependencias de APIs externas.  
-3. **Fricción de sincronización:** Duplicidad de interfaces y configuraciones.
+ChronoCal resuelve ese problema dentro del propio ecosistema de Google Workspace, sin backend propio y sin servicios externos.
 
 ### **1.2. Visión del Producto**
 
-Crear un **Google Workspace Add-on** de panel lateral que actúe de manera 100% nativa y local dentro de Google Calendar. La extensión permitirá iniciar y detener un temporizador para cualquier evento o tarea seleccionada, utilizando la propia **API de Google Calendar** para actualizar el evento (ajustando la duración real o escribiendo en la descripción), almacenando los datos intermedios en la caché local del usuario o en una hoja de cálculo personal (Google Sheets), garantizando **privacidad absoluta y cero dependencias de servidores externos**.
+Crear un **Google Workspace Add-on** para Google Calendar que permita iniciar y detener un registro de tiempo desde un panel lateral contextual. El add-on almacenará el estado de sesión de forma nativa en Google Apps Script y aplicará el resultado al evento mediante la API de Calendar o, opcionalmente, a Google Sheets.
 
-## **2\. Objetivos del Negocio y del Usuario**
+### **1.3. Supuestos de Viabilidad**
+
+* El producto es **desktop-first** y se usa desde Google Calendar web.
+* El panel lateral se construye con **CardService** y no puede ejecutar JavaScript de cliente ni un reloj en vivo por segundo.
+* El estado activo se recalcula por marcas de tiempo absolutas cuando el usuario interactúa con la UI.
+* El producto no usa servidores externos ni bases de datos de terceros.
+
+## **2. Objetivos del Negocio y del Usuario**
 
 ### **2.1. Objetivos del Usuario**
 
-* **Privacidad Total:** Que ningún dato de su agenda salga de los servidores de Google de su cuenta.  
-* **Sencillez Extrema:** Un botón de "Play / Stop" directamente al hacer clic en cualquier evento de Google Calendar.  
-* **Flexibilidad de Registro:** Poder elegir si el tiempo registrado modifica la duración visual del evento en la cuadrícula o si se guarda como metadatos/texto en la descripción del evento.
+* **Privacidad total:** mantener el registro dentro de Google Workspace.
+* **Simplicidad extrema:** iniciar y detener el tracking desde el propio evento.
+* **Flexibilidad de salida:** elegir entre escribir la duración en la descripción, ajustar el horario del evento o exportar a Sheets.
 
 ### **2.2. Métricas de Éxito (KPIs)**
 
-* **Adopción:** Número de usuarios activos que registran al menos 3 tareas por semana.  
-* **Rendimiento:** Latencia de actualización del evento tras dar clic en "Detener" inferior a 2 segundos.  
-* **Retención:** Retención de usuarios a 30 días del 60% (alta fidelidad debido a la propuesta de privacidad).
+* **Adopción:** usuarios activos que registran al menos 3 sesiones por semana.
+* **Rendimiento:** tiempo desde Stop hasta confirmación visible inferior a 2 segundos en condiciones normales.
+* **Retención:** 30 días con 60% de retención en usuarios que usan el add-on al menos una vez por semana.
 
-## **3\. Personas de Usuario (User Personas)**
+## **3. Personas de Usuario**
 
-### **3.1. Carlos, Desarrollador/Consultor Freelance Consciente de la Privacidad**
+### **3.1. Carlos, consultor freelance consciente de la privacidad**
 
-* **Necesidades:** Registrar horas exactas de reuniones y tareas de código para facturar a clientes.  
-* **Problema:** Trabaja con clientes bajo acuerdos de confidencialidad estrictos (NDA) y no puede subir los títulos de sus tareas o nombres de clientes a plataformas de terceros como Toggl.  
-* **Caso de uso de ChronoCal:** Abre Google Calendar, hace clic en el evento "Debug de base de datos Cliente X", inicia el temporizador en el panel lateral de ChronoCal y, al terminar, el evento se actualiza automáticamente con la duración real y un tag \[Tiempo Real: 01:42:00\] en la descripción.
+* **Necesidades:** registrar horas reales para facturación y reporting.
+* **Problema:** trabaja con NDA y no quiere enviar eventos o títulos a servicios externos.
+* **Uso esperado:** abre un evento en Calendar, inicia el registro y al finalizar guarda la duración real en el mismo ecosistema de Google.
 
-## **4\. Requisitos Funcionales (Functional Requirements)**
+## **4. Alcance Funcional**
 
-### **4.1. Core Loop (Flujo Principal)**
+### **4.1. Flujo Principal**
 
-1. El usuario selecciona un evento en su interfaz de Google Calendar.  
-2. El Add-on contextual se abre en el panel lateral derecho de la pantalla.  
-3. El Add-on reconoce el ID del evento seleccionado.  
-4. El usuario hace clic en **"Iniciar Registro"** (Start).  
-5. El sistema guarda la hora de inicio en el almacenamiento persistente nativo del usuario (PropertiesService de Google Apps Script) y arranca un cronómetro visual.  
-6. El usuario trabaja en su tarea. (Puede cerrar la pestaña de Calendar, el estado se preserva en los servidores de Google mediante Apps Script).  
-7. Al completar la tarea, el usuario hace clic en **"Detener y Guardar"** (Stop).  
-8. El sistema calcula la diferencia horaria, limpia la caché de registro activa y aplica la acción seleccionada por el usuario (modificar hora de fin o añadir nota en la descripción).
+1. El usuario abre un evento en Google Calendar.
+2. El add-on contextual se muestra en el panel lateral.
+3. El add-on identifica el evento activo mediante el contexto del trigger.
+4. El usuario pulsa **Iniciar registro**.
+5. El sistema guarda `event_id`, `calendar_id`, `start_time` y `status` en `UserProperties`.
+6. El usuario trabaja en su tarea.
+7. El usuario pulsa **Detener y guardar**.
+8. El sistema calcula la duración usando marcas de tiempo absolutas, limpia la sesión activa y guarda el resultado en Calendar o Sheets según la configuración.
 
-### **4.2. Módulos y Requisitos Detallados**
+### **4.2. Requisitos Funcionales Detallados**
 
-#### **FR-01: Interfaz del Panel Lateral (Sidebar Card UI)**
+#### **FR-01: Interfaz del panel lateral**
 
-* **Descripción:** Interfaz construida con el framework nativo de tarjetas de Google Workspace (CardService).  
-* **Sub-requisitos:**  
-  * Debe mostrar el nombre del evento seleccionado de forma dinámica.  
-  * Estado **Sin Iniciar:** Botón verde grande de **"Iniciar Temporizador"**.  
-  * Estado **Activo:** Muestra el tiempo transcurrido en tiempo real (HH:MM:SS), botón de **"Pausar"** (opcional/deseable) y botón rojo de **"Detener y Guardar"**.  
-  * Estado **Pausado:** Botón para **"Reanudar"** y botón para **"Descartar"**.
+* La UI debe estar construida con **CardService**.
+* Debe mostrar el título del evento activo y el estado de la sesión.
+* Debe soportar estos estados:
+  * **Sin iniciar:** botón principal para iniciar.
+  * **Activo:** muestra tiempo transcurrido calculado al recargar la tarjeta o al pulsar acciones; incluye detener y, opcionalmente, pausar.
+  * **Pausado:** permite reanudar o descartar.
+* La UI debe ser declarativa y actualizarse solo mediante acciones del usuario.
 
-#### **FR-02: Integración con Google Calendar API (Modificación de Eventos)**
+#### **FR-02: Integración con Google Calendar**
 
-* **Descripción:** Interacción directa con los datos del evento actual sin intermediación de backends externos.  
-* **Acciones Disponibles al Detener el Tiempo:**  
-  * **Opción A (Ajustar duración del evento):** Modifica el parámetro end del evento en Calendar. El evento se desplaza visualmente en la cuadrícula para reflejar la duración real de lo trabajado.  
-    * *Ejemplo:* Evento agendado de 10:00 a 11:00. Si el usuario trabajó 1h 30m, la API modifica el fin del evento a las 11:30 de manera automática.  
-  * **Opción B (Registro en Descripción):** Añade una línea al final de la descripción del evento con formato estandarizado.  
-    * *Formato:* ⌛ Registro de Tiempo: {HH:MM:SS} (Fecha: DD/MM/AAAA)  
-  * **Opción C (Exportar a Google Sheets):** Al detenerse, si el usuario tiene configurada una Spreadsheet propia, la extensión añade una fila con \[Fecha, ID\_Evento, Título, Duración, Descripción\].
+* Al detener la sesión, el add-on debe poder aplicar una de estas salidas:
+  * **Opción A:** añadir una línea estándar en la descripción del evento.
+  * **Opción B:** ajustar la hora de fin del evento si el usuario lo habilita.
+  * **Opción C:** registrar una fila en una hoja de cálculo de Google Sheets.
+* El formato base para descripción debe ser:
+  * `⌛ Duración Real: HH:MM:SS (Fecha: DD/MM/AAAA)`
+* Si el evento no existe, fue borrado o no hay permisos, el add-on debe mostrar un mensaje claro y no perder la sesión guardada hasta resolver el error.
 
-#### **FR-03: Gestión del Estado de Sesión (No-Backend DB)**
+#### **FR-03: Gestión del estado de sesión**
 
-* **Descripción:** Almacenamiento del estado del cronómetro (para evitar que se pierda si el usuario cierra el navegador o refresca la página).  
-* **Sub-requisitos:**  
-  * Uso de **PropertiesService.getUserProperties()** de Google Apps Script. Este servicio es un almacén clave-valor integrado directamente en la infraestructura de la cuenta de Google de cada usuario.  
-  * Al dar "Play", se guarda:  
-    {  
-      "active\_event\_id": "google\_event\_id\_xyz",  
-      "start\_time": "2026-06-13T12:00:00.000Z",  
-      "status": "RUNNING"  
-    }
+* El add-on debe usar `PropertiesService.getUserProperties()` para guardar la sesión activa.
+* El estado mínimo guardado debe incluir:
 
-  * Al abrir el calendario en cualquier momento o dispositivo, el Add-on consulta getUserProperties() y, si hay una sesión activa para ese evento, inicializa el temporizador en el punto correcto.
+```json
+{
+  "active_event_id": "google_event_id_xyz",
+  "calendar_id": "primary",
+  "start_time": "2026-06-13T12:00:00.000Z",
+  "status": "RUNNING"
+}
+```
 
-## **5\. Diseño de Arquitectura (Nativa y Serverless de Google)**
+* El estado debe ser pequeño y no superar los límites de `PropertiesService`.
+* Si el usuario vuelve a abrir Calendar, el add-on debe recuperar el estado y reconstruir la sesión activa.
 
-La arquitectura no requiere servidores externos gracias a la estructura nativa de los Add-ons de Google Workspace:
+#### **FR-04: Exportación a Google Sheets**
 
-\[ Navegador del Usuario (Google Calendar) \]  
-                     │  
-                     ▼ (Acciones de la UI: Play / Stop)  
-   \[ Código de Apps Script (Google Server) \]  ◄─── No es un tercero, corre bajo la cuenta de Google  
-          │                     │  
-          ├─────────────────────┼─────────────────────┐  
-          ▼                     ▼                     ▼  
- ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐  
- │ Google Calendar │   │ Properties      │   │ Google Sheets   │  
- │ API             │   │ Service         │   │ API (Opcional)  │  
- │ (Ajusta evento) │   │ (Caché local)   │   │ (Log personal)  │  
- └─────────────────┘   └─────────────────┘   └─────────────────┘
+* La exportación a Sheets es opcional y desactivada por defecto.
+* Si el usuario la activa, el add-on debe añadir una fila por cada Stop con:
+  * fecha
+  * ID de evento
+  * título
+  * duración
+  * descripción
+* Si no se ha configurado una hoja destino, el add-on debe pedir al usuario que la indique.
 
-## **6\. Diseño de UI/UX (Directrices)**
+## **5. Diseño de Arquitectura**
 
-Dado que es un Google Workspace Add-on nativo, la UI debe seguir estrictamente los lineamientos de diseño de Google:
+La arquitectura se mantiene nativa dentro de Google:
 
-* **Colores:** Azul Google (\#1a73e8) para interacciones normales, Verde (\#1e8e3e) para "Iniciar", Rojo (\#d93025) para "Detener".  
-* **Comportamiento Adaptativo:** El panel lateral debe ajustarse fluidamente en ancho cuando el usuario redimensiona la barra lateral de Google Calendar.  
-* **Retroalimentación No Intrusiva:** Al guardar con éxito un registro de tiempo, debe aparecer un pequeño "Toast" (notificación emergente inferior) indicando *"Evento actualizado con éxito"*, en lugar de alertas molestas.
+```text
+[Google Calendar en el navegador]
+          │
+          ▼
+[Apps Script / CardService]
+          │
+          ├── Calendar service
+          ├── UserProperties
+          └── Sheets service (opcional)
+```
 
-## **7\. Requisitos No Funcionales (Non-Functional Requirements)**
+### **5.1. Principios de diseño**
 
-* **Seguridad y Privacidad (Crítico):**  
-  * **Cero llamadas HTTPS externas:** La extensión no puede realizar peticiones a dominios externos (UrlFetchApp deshabilitado o restringido a APIs de Google). Esto garantiza que la extensión pueda pasar cualquier auditoría de seguridad corporativa inmediatamente.  
-  * **Scopes mínimos de OAuth:** Solo solicitar permisos estrictamente necesarios:  
-    * https://www.googleapis.com/auth/calendar.events (Para ver y editar eventos).  
-    * https://www.googleapis.com/auth/spreadsheets (Solo si el usuario activa el log en Google Sheets).  
-* **Escalabilidad y Límites:**  
-  * El sistema hereda las cuotas nativas de Google Apps Script de forma gratuita para el usuario (hasta 20,000 llamadas a la API de Calendar por día), lo cual es infinitamente superior al uso de un solo individuo.
+* Sin backend propio.
+* Sin llamadas HTTPS externas.
+* Sin dependencia de estado en el navegador.
+* Cálculo de duración basado en timestamps absolutos.
 
-## **8\. Plan de Lanzamiento y Fases (Milestones)**
+## **6. Diseño de UI/UX**
 
-### **Fase 1: MVP (Producto Mínimo Viable)**
+* La UI debe seguir el estilo de Google Workspace.
+* Los botones principales deben ser claros, con prioridad visual para iniciar y detener.
+* Los colores sugeridos son:
+  * azul para acciones neutras,
+  * verde para iniciar,
+  * rojo para detener.
+* La confirmación de guardado debe mostrarse como notificación no intrusiva.
+* La experiencia debe ser estable cuando el usuario cambia de evento o refresca el panel.
 
-* Interfaz básica con Play / Stop en el panel lateral al seleccionar un evento.  
-* Al dar "Stop", se actualiza la descripción del evento añadiendo la cadena ⌛ Duración Real: \[HH:MM:SS\].  
-* Estado guardado en PropertiesService para evitar pérdidas por desconexión.
+## **7. Requisitos No Funcionales**
 
-### **Fase 2: Automatización Horaria**
+### **7.1. Seguridad y Privacidad**
 
-* Opción para extender o recortar la duración física del evento en la cuadrícula de Google Calendar.  
-* Implementación de un botón para "Descartar sesión de tiempo activa".
+* No usar servicios externos.
+* No usar `UrlFetchApp` salvo que en el futuro exista una integración de Google aprobada.
+* Solicitar solo los scopes necesarios para la funcionalidad activada.
 
-### **Fase 3: Analíticas Locales (Google Sheets Sync)**
+### **7.2. Scopes previstos**
 
-* Sincronización automática de cada "Stop" a una pestaña de una hoja de cálculo elegida por el usuario.  
-* Generación de gráficos simples dentro de esa misma hoja de cálculo (por categorías de colores de Google Calendar).
+* Modo base:
+  * acceso a datos del evento actual de Calendar según el contexto del add-on.
+* Modo escritura en Calendar:
+  * scope de escritura para el evento actual de Calendar.
+* Modo Sheets:
+  * scope de Sheets solo cuando el usuario active exportación.
 
-## **9\. Riesgos y Mitigación**
+### **7.3. Límites y Escalabilidad**
 
-| Riesgo identificado | Severidad | Plan de Mitigación |
+* El add-on debe respetar las cuotas y límites de Apps Script.
+* El estado almacenado en propiedades debe ser pequeño.
+* La lógica debe tolerar suspensión del navegador y reanudación posterior.
+
+## **8. Plan de Lanzamiento y Fases**
+
+### **Fase 1: MVP**
+
+* Panel lateral contextual al abrir un evento.
+* Botón de iniciar y botón de detener.
+* Persistencia de sesión en `UserProperties`.
+* Guardado de duración en la descripción del evento.
+* Notificación de éxito al finalizar.
+
+### **Fase 2: Automatización horaria**
+
+* Opción para extender o recortar la duración del evento.
+* Botón para pausar, reanudar y descartar la sesión activa.
+* Manejo mejorado de eventos repetidos y conflictos.
+
+### **Fase 3: Analíticas locales**
+
+* Exportación a Google Sheets.
+* Resúmenes por fecha, duración y calendario.
+* Preparación de gráficos simples dentro de la hoja de cálculo.
+
+## **9. Riesgos y Mitigación**
+
+| Riesgo identificado | Severidad | Plan de mitigación |
 | :---- | :---- | :---- |
-| El usuario cambia de evento en la interfaz de Calendar mientras el temporizador del evento original sigue corriendo. | Media | La UI del panel lateral debe mostrar de forma clara qué evento se está registrando actualmente (por ejemplo: *"Registrando: \[Título de Evento A\]"*) con un indicador visual parpadeante, sin importar qué evento tenga seleccionado el usuario en ese momento. |
-| El navegador entra en suspensión prolongada o se apaga la computadora del usuario. | Alta | La lógica se calcula comparando marcas de tiempo absolutas (Timestamp actual \- Timestamp de inicio). No dependemos de que el navegador esté ejecutando activamente un proceso segundo a segundo. Al reactivar, la diferencia horaria será exacta. |
+| El usuario cambia de evento mientras el temporizador del original sigue activo. | Media | Mostrar claramente el evento que se está registrando, con nombre y estado de sesión persistente. |
+| El navegador se suspende o se cierra. | Alta | Calcular duración con timestamps absolutos y no con un contador dependiente del cliente. |
+| El evento se elimina o cambia antes de detener. | Media | Validar el evento al guardar y mostrar un error recuperable sin perder el estado de sesión hasta resolverlo. |
+| El usuario habilita Sheets sin haber configurado una hoja destino. | Baja | Solicitar configuración explícita antes del primer export. |
+| El add-on requiere más permisos de los necesarios. | Alta | Mantener scopes mínimos y separar la exportación a Sheets como característica opcional. |
+
+## **10. Criterios de Aceptación**
+
+* El add-on abre el panel contextual al abrir un evento en Calendar.
+* El usuario puede iniciar y detener una sesión sin depender de servidores externos.
+* La duración queda persistida y visible tras recargar el panel.
+* El resultado se escribe correctamente en la descripción del evento en la Fase 1.
+* La implementación puede crecer a edición de fin de evento y Sheets sin rediseñar la arquitectura base.
+
+## **11. Fuera de Alcance Inicial**
+
+* Cronómetro visual con tick por segundo dentro de CardService.
+* Soporte móvil como objetivo principal.
+* Concurrencia de múltiples sesiones activas por usuario.
+* Backend propio o base de datos externa.
+* Integraciones con servicios de terceros.
+
+## **12. Resumen Ejecutivo**
+
+ChronoCal es viable como add-on de Google Calendar si se respeta el modelo real de Apps Script: UI declarativa, estado persistente por usuario, y actualizaciones por acciones. La propuesta de valor de privacidad sigue intacta, pero el MVP debe ser más sobrio: panel contextual, start/stop, persistencia y escritura en Calendar. El resto debe salir por fases.
 
