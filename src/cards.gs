@@ -135,10 +135,15 @@ function buildGeneralActionsSection_(sessions, settings, locale) {
 
 function buildFooterSection_(locale) {
   var section = CardService.newCardSection();
+  var docsLink = CardService.newOpenLink()
+    .setUrl(CHRONOCAL_CONFIG.docsUrl)
+    .setOpenAs(CardService.OpenAs.FULL_SIZE)
+    .setOnClose(CardService.OnClose.NOTHING);
+
   section.addWidget(
-    CardService.newTextParagraph().setText(
-      t_('common.docs', null, locale)
-    )
+    CardService.newTextButton()
+      .setText(t_('common.docs', null, locale))
+      .setOpenLink(docsLink)
   );
   return section;
 }
