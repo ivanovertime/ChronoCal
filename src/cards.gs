@@ -130,7 +130,7 @@ function buildFooterSection_() {
   var section = CardService.newCardSection();
   section.addWidget(
     CardService.newTextParagraph().setText(
-      'Los tiempos se recalculan al usar una acción o al pulsar «Actualizar».'
+      'Docs'
     )
   );
   return section;
