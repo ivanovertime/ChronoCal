@@ -1,17 +1,10 @@
 function buildBaseCard_(options) {
   var eventContext = options.eventContext || null;
   var sessions = options.sessions || [];
+  var settings = options.settings || getSettings_();
   var entries = buildTrackingEntries_(eventContext, sessions);
-  var activeCount = countActiveSessions_(sessions);
 
   var cardBuilder = CardService.newCardBuilder();
-  var header = CardService.newCardHeader().setTitle('ChronoCal');
-  header.setSubtitle(
-    activeCount > 0
-      ? activeCount + (activeCount === 1 ? ' evento en seguimiento' : ' eventos en seguimiento')
-      : 'Seguimiento local de tiempo'
-  );
-  cardBuilder.setHeader(header);
 
   if (!entries.length) {
     var emptySection = CardService.newCardSection();
@@ -28,10 +21,10 @@ function buildBaseCard_(options) {
   }
 
   for (var i = 0; i < entries.length; i++) {
-    cardBuilder.addSection(buildEntrySection_(entries[i]));
+    cardBuilder.addSection(buildEntrySection_(entries[i], settings));
   }
 
-  cardBuilder.addSection(buildToolbarSection_(entries[0].context));
+  cardBuilder.addSection(buildGeneralActionsSection_(sessions, settings));
   cardBuilder.addSection(buildFooterSection_());
 
   return cardBuilder.build();
@@ -72,18 +65,7 @@ function entryKey_(calendarId, eventId) {
   return (calendarId || 'primary') + '::' + (eventId || '');
 }
 
-function countActiveSessions_(sessions) {
-  var list = sessions || [];
-  var count = 0;
-  for (var i = 0; i < list.length; i++) {
-    if (list[i].status === 'RUNNING' || list[i].status === 'PAUSED') {
-      count++;
-    }
-  }
-  return count;
-}
-
-function buildEntrySection_(entry) {
+function buildEntrySection_(entry, settings) {
   var context = entry.context;
   var session = entry.session;
   var status = session ? session.status : 'NONE';
@@ -102,12 +84,12 @@ function buildEntrySection_(entry) {
       .setWrapText(true)
   );
 
-  section.addWidget(buildEntryActions_(status, context));
+  section.addWidget(buildEntryActions_(status, context, settings));
 
   return section;
 }
 
-function buildEntryActions_(status, context) {
+function buildEntryActions_(status, context, settings) {
   var buttons = CardService.newButtonSet();
 
   if (status === 'RUNNING') {
@@ -118,7 +100,10 @@ function buildEntryActions_(status, context) {
     buttons.addButton(createIconButton_('stop', 'Detener', 'onStopTracking', context));
   } else if (status === 'STOPPED') {
     buttons.addButton(createIconButton_('play_arrow', 'Reanudar', 'onResumeTracking', context));
-    buttons.addButton(createIconButton_('save', 'Guardar en el evento', 'onSaveSession', context));
+    if (settings.writeDescription) {
+      buttons.addButton(createIconButton_('save', 'Guardar en la descripción del evento', 'onSaveSession', context));
+    }
+    buttons.addButton(createIconButton_('table_chart', 'Exportar a Google Sheets', 'onExportSessionToSheets', context));
     buttons.addButton(createIconButton_('delete', 'Descartar', 'onDiscardSession', context));
   } else {
     buttons.addButton(createIconButton_('play_arrow', 'Iniciar', 'onStartTracking', context));
@@ -127,16 +112,17 @@ function buildEntryActions_(status, context) {
   return buttons;
 }
 
-function buildToolbarSection_(context) {
-  var section = CardService.newCardSection();
-  section.addWidget(
-    CardService.newButtonSet().addButton(
-      CardService.newTextButton()
-        .setText('Actualizar tiempos')
-        .setTextButtonStyle(CardService.TextButtonStyle.OUTLINED)
-        .setOnClickAction(buildCardAction_('onRefreshCard', context))
-    )
-  );
+function buildGeneralActionsSection_(sessions, settings) {
+  var section = CardService.newCardSection().setHeader('Acciones generales');
+  var buttons = CardService.newButtonSet();
+
+  buttons.addButton(createGlobalIconButton_('pause', 'Pausar todo', 'onPauseAll'));
+  buttons.addButton(createGlobalIconButton_('stop', 'Detener todo', 'onStopAll'));
+  buttons.addButton(createGlobalIconButton_('table_chart', 'Exportar a Google Sheets', 'onExportToSheets'));
+  buttons.addButton(createGlobalIconButton_('refresh', 'Actualizar tiempos', 'onRefreshCard'));
+  buttons.addButton(createGlobalIconButton_(settings.writeDescription ? 'edit' : 'edit_off', settings.writeDescription ? 'Modificar descripción: activado' : 'Modificar descripción: desactivado', 'onToggleDescriptionMode'));
+
+  section.addWidget(buttons);
   return section;
 }
 
@@ -144,7 +130,7 @@ function buildFooterSection_() {
   var section = CardService.newCardSection();
   section.addWidget(
     CardService.newTextParagraph().setText(
-      'Los tiempos se recalculan al usar una acción o al pulsar «Actualizar tiempos».'
+      'Los tiempos se recalculan al usar una acción o al pulsar «Actualizar».'
     )
   );
   return section;
@@ -177,8 +163,19 @@ function createIconButton_(iconName, altText, functionName, context) {
     .setOnClickAction(buildCardAction_(functionName, context));
 }
 
+function createGlobalIconButton_(iconName, altText, functionName) {
+  return CardService.newImageButton()
+    .setAltText(altText)
+    .setIconUrl(chronoActionIconUrl_(iconName))
+    .setOnClickAction(buildGlobalAction_(functionName));
+}
+
 function chronoActionIconUrl_(iconName) {
   return 'https://www.gstatic.com/images/icons/material/system/1x/' + iconName + '_grey600_24dp.png';
+}
+
+function buildGlobalAction_(functionName) {
+  return CardService.newAction().setFunctionName(functionName);
 }
 
 function buildCardAction_(functionName, eventContext) {
@@ -191,3 +188,4 @@ function buildCardAction_(functionName, eventContext) {
       timeZone: eventContext.timeZone
     });
 }
+

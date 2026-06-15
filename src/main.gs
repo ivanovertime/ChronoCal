@@ -145,6 +145,13 @@ function onSaveSession(e) {
     }), 'No hay una sesión para guardar en este evento.');
   }
 
+  if (!getSettings_().writeDescription) {
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: buildEventContextFromSession_(targetSession),
+      sessions: sessions
+    }), 'La modificación de descripción está desactivada. Exporta a Sheets en su lugar.');
+  }
+
   var targetContext = enrichEventContextFromCalendar_(buildEventContextFromSession_(targetSession));
   var durationMs = calculateSessionDurationMs_(targetSession);
 
@@ -186,6 +193,101 @@ function onSaveLastResultToEvent(e) {
 
 function onDiscardLastResult(e) {
   return onDiscardSession(e);
+}
+
+function onPauseAll(e) {
+  var sessions = getSessions_();
+  var count = pauseAllSessions_(sessions, Date.now());
+  saveSessions_(sessions);
+
+  return buildNotificationResponse_(buildBaseCard_({
+    eventContext: resolveCardEventContext_(e, sessions),
+    sessions: sessions
+  }), count ? ('Pausados ' + count + ' eventos.') : 'No hay eventos en ejecución.');
+}
+
+function onStopAll(e) {
+  var sessions = getSessions_();
+  var count = stopAllSessions_(sessions, Date.now());
+  saveSessions_(sessions);
+
+  return buildNotificationResponse_(buildBaseCard_({
+    eventContext: resolveCardEventContext_(e, sessions),
+    sessions: sessions
+  }), count ? ('Detenidos ' + count + ' eventos.') : 'No hay eventos activos.');
+}
+
+function onExportToSheets(e) {
+  var sessions = getSessions_();
+  var stopped = getStoppedSessions_(sessions);
+
+  if (!stopped.length) {
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: resolveCardEventContext_(e, sessions),
+      sessions: sessions
+    }), 'Detén un evento antes de exportarlo a Sheets.');
+  }
+
+  try {
+    var result = exportSessionsToSheets_(stopped);
+    for (var i = 0; i < stopped.length; i++) {
+      sessions = removeSessionByEvent_(sessions, buildEventContextFromSession_(stopped[i]));
+    }
+    saveSessions_(sessions);
+
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: resolveCardEventContext_(e, sessions),
+      sessions: sessions
+    }), 'Exportadas ' + result.count + ' sesiones a Google Sheets.');
+  } catch (error) {
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: resolveCardEventContext_(e, sessions),
+      sessions: sessions
+    }), (error && error.message ? error.message : 'No se pudo exportar a Sheets.') + ' Sesiones conservadas.');
+  }
+}
+
+function onExportSessionToSheets(e) {
+  var context = getEventContext_(e);
+  var sessions = getSessions_();
+  var targetSession = getSessionForEvent_(sessions, context);
+
+  if (!targetSession) {
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: context,
+      sessions: sessions
+    }), 'No hay una sesión para exportar en este evento.');
+  }
+
+  try {
+    var result = exportSessionsToSheets_([targetSession]);
+    sessions = removeSessionByEvent_(sessions, buildEventContextFromSession_(targetSession));
+    saveSessions_(sessions);
+
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: resolveCardEventContext_(e, sessions),
+      sessions: sessions
+    }), 'Sesión exportada a Google Sheets (' + result.count + ').');
+  } catch (error) {
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: buildEventContextFromSession_(targetSession),
+      sessions: sessions
+    }), (error && error.message ? error.message : 'No se pudo exportar a Sheets.') + ' Sesión conservada.');
+  }
+}
+
+function onToggleDescriptionMode(e) {
+  var settings = getSettings_();
+  settings.writeDescription = !settings.writeDescription;
+  saveSettings_(settings);
+
+  var sessions = getSessions_();
+  return buildNotificationResponse_(buildBaseCard_({
+    eventContext: resolveCardEventContext_(e, sessions),
+    sessions: sessions
+  }), settings.writeDescription
+    ? 'Se podrá modificar la descripción del evento.'
+    : 'No se modificará la descripción del evento.');
 }
 
 function refreshCard_(e, message) {

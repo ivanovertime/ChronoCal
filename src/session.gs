@@ -147,11 +147,11 @@ function clearLastResult_() {
 }
 
 function getSettings_() {
-  return getStoredJson_(CHRONOCAL_CONFIG.settingsPropertyKey) || getDefaultSettings_();
+  return normalizeSettings_(getStoredJson_(CHRONOCAL_CONFIG.settingsPropertyKey));
 }
 
 function saveSettings_(settings) {
-  setStoredJson_(CHRONOCAL_CONFIG.settingsPropertyKey, settings);
+  setStoredJson_(CHRONOCAL_CONFIG.settingsPropertyKey, normalizeSettings_(settings));
 }
 
 function formatDuration_(durationMs) {
@@ -448,6 +448,36 @@ function stopSessionInPlace_(session, nowMs) {
   session.started_at_ms = currentMs;
   session.status = 'STOPPED';
   session.stopped_at_iso = new Date(currentMs).toISOString();
+}
+
+function pauseAllSessions_(sessions, nowMs) {
+  var list = sessions || [];
+  var count = 0;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].status === 'RUNNING') {
+      pauseSessionInPlace_(list[i], nowMs);
+      count++;
+    }
+  }
+  return count;
+}
+
+function stopAllSessions_(sessions, nowMs) {
+  var list = sessions || [];
+  var count = 0;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].status === 'RUNNING' || list[i].status === 'PAUSED') {
+      stopSessionInPlace_(list[i], nowMs);
+      count++;
+    }
+  }
+  return count;
+}
+
+function getStoppedSessions_(sessions) {
+  return (sessions || []).filter(function(session) {
+    return session.status === 'STOPPED';
+  });
 }
 
 function buildEventContextFromResult_(result) {
