@@ -4,7 +4,7 @@
     nodejs_22
     git
     jq
-    nixfmt-rfc-style
+    nixfmt
   ];
 
   env = {
