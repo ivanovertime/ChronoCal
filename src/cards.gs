@@ -1,6 +1,8 @@
 function buildBaseCard_(options) {
   var eventContext = options.eventContext || null;
-  var activeSession = options.activeSession || null;
+  var sessions = options.sessions || [];
+  var currentSession = eventContext ? getSessionForEvent_(sessions, eventContext) : null;
+  var runningSession = getRunningSession_(sessions);
   var lastResult = options.lastResult || null;
   var cardBuilder = CardService.newCardBuilder();
   var header = CardService.newCardHeader().setTitle('ChronoCal');
@@ -24,22 +26,18 @@ function buildBaseCard_(options) {
   cardBuilder.addSection(introSection);
 
   if (eventContext) {
-    var isSameActive = activeSession && isSameEvent_(activeSession, eventContext);
+    var isSameActive = currentSession && currentSession.status === 'RUNNING';
     var hasPendingResult = Boolean(lastResult);
-    var hasActiveInOtherEvent = activeSession && !isSameActive;
-    var activeSessionContext = activeSession ? buildEventContextFromSession_(activeSession) : null;
+    var hasActiveInOtherEvent = runningSession && !isSameEvent_(runningSession, eventContext);
+    var activeSessionContext = runningSession ? buildEventContextFromSession_(runningSession) : null;
     var pendingResultContext = lastResult ? buildEventContextFromResult_(lastResult) : eventContext;
     var statusSection = CardService.newCardSection().setHeader('Estado de la sesión');
     var statusText = 'Sin iniciar';
     var elapsedText = '—';
 
-    if (isSameActive) {
-      statusText = activeSession.status === 'PAUSED' ? 'Pausado' : 'Activo';
-      if (activeSession.status === 'RUNNING') {
-        elapsedText = formatDuration_(calculateSessionDurationMs_(activeSession));
-      } else if (activeSession.status === 'PAUSED') {
-        elapsedText = formatDuration_(calculateSessionDurationMs_(activeSession));
-      }
+    if (currentSession) {
+      statusText = currentSession.status === 'PAUSED' ? 'Pausado' : 'Activo';
+      elapsedText = formatDuration_(calculateSessionDurationMs_(currentSession));
     } else if (hasPendingResult && lastResult.event_id === eventContext.eventId && lastResult.calendar_id === eventContext.calendarId) {
       statusText = 'Detenido (pendiente de guardar)';
       elapsedText = formatDuration_(Number(lastResult.duration_ms || 0));
@@ -56,11 +54,11 @@ function buildBaseCard_(options) {
     var actionSection = CardService.newCardSection().setHeader('Acciones');
     var buttonSet = CardService.newButtonSet();
 
-    if (isSameActive && activeSession.status === 'RUNNING') {
+    if (currentSession && currentSession.status === 'RUNNING') {
       buttonSet.addButton(createPrimaryPauseButton_(eventContext));
       buttonSet.addButton(createPrimaryStopButton_(eventContext));
       buttonSet.addButton(createSecondaryButton_('Refrescar', 'onRefreshCard', eventContext, CardService.TextButtonStyle.OUTLINED));
-    } else if (isSameActive && activeSession.status === 'PAUSED') {
+    } else if (currentSession && currentSession.status === 'PAUSED') {
       buttonSet.addButton(createPrimaryResumeButton_(eventContext));
       buttonSet.addButton(createPrimaryStopButton_(eventContext));
       buttonSet.addButton(createSecondaryButton_('Refrescar', 'onRefreshCard', eventContext, CardService.TextButtonStyle.OUTLINED));
@@ -79,17 +77,17 @@ function buildBaseCard_(options) {
       globalSessionSection.addWidget(
         CardService.newDecoratedText()
           .setTopLabel('Evento activo')
-          .setText(activeSession.event_title || activeSessionContext.eventTitle || 'Evento sin título')
+          .setText(runningSession.event_title || activeSessionContext.eventTitle || 'Evento sin título')
       );
       globalSessionSection.addWidget(
         CardService.newDecoratedText()
           .setTopLabel('Tiempo acumulado')
-          .setText(formatDuration_(calculateSessionDurationMs_(activeSession)))
+          .setText(formatDuration_(calculateSessionDurationMs_(runningSession)))
       );
 
-      if (activeSession.status === 'RUNNING') {
+      if (runningSession.status === 'RUNNING') {
         globalButtons.addButton(createPrimaryPauseButton_(activeSessionContext));
-      } else if (activeSession.status === 'PAUSED') {
+      } else if (runningSession.status === 'PAUSED') {
         globalButtons.addButton(createPrimaryResumeButton_(activeSessionContext));
       }
       globalButtons.addButton(createPrimaryStopButton_(activeSessionContext));

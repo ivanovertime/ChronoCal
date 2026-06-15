@@ -1,21 +1,21 @@
 function buildHomeCard(e) {
-  var activeSession = getActiveSession_();
+  var sessions = getSessions_();
   var lastResult = getLastResult_();
 
   return buildBaseCard_({
-    eventContext: resolveCardEventContext_(e, activeSession, lastResult),
-    activeSession: activeSession,
+    eventContext: resolveCardEventContext_(e, sessions, lastResult),
+    sessions: sessions,
     lastResult: lastResult
   });
 }
 
 function buildEventCard(e) {
-  var activeSession = getActiveSession_();
+  var sessions = getSessions_();
   var lastResult = getLastResult_();
 
   return buildBaseCard_({
-    eventContext: resolveCardEventContext_(e, activeSession, lastResult),
-    activeSession: activeSession,
+    eventContext: resolveCardEventContext_(e, sessions, lastResult),
+    sessions: sessions,
     lastResult: lastResult
   });
 }
@@ -26,115 +26,130 @@ function onRefreshCard(e) {
 
 function onStartTracking(e) {
   var context = getEventContext_(e);
-  var activeSession = getActiveSession_();
+  var sessions = getSessions_();
+  var currentSession = getSessionForEvent_(sessions, context);
+  var runningSession = getRunningSession_(sessions);
+  var nowMs = Date.now();
 
   if (!context.eventId) {
     return buildNotificationResponse_(buildHomeCard(e), 'No se pudo identificar el evento actual.');
   }
 
-  if (activeSession && !isSameEvent_(activeSession, context)) {
-    return buildNotificationResponse_(buildBaseCard_({
-      eventContext: context,
-      activeSession: activeSession
-    }), 'Ya existe una sesión activa en otro evento. Pausa o detén esa sesión antes de iniciar otra.');
+  if (runningSession && !isSameEvent_(runningSession, context)) {
+    pauseSessionInPlace_(runningSession, nowMs);
   }
 
-  if (activeSession && isSameEvent_(activeSession, context) && activeSession.status === 'RUNNING') {
+  if (currentSession && currentSession.status === 'RUNNING') {
     return buildNotificationResponse_(buildBaseCard_({
       eventContext: context,
-      activeSession: activeSession
+      sessions: sessions,
+      lastResult: getLastResult_()
     }), 'Esta sesión ya está en ejecución.');
   }
 
-  if (activeSession && isSameEvent_(activeSession, context) && activeSession.status === 'PAUSED') {
-    return onResumeTracking(e);
+  if (currentSession && currentSession.status === 'PAUSED') {
+    resumeSessionInPlace_(currentSession, nowMs);
+    saveSessions_(sessions);
+
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: buildEventContextFromSession_(currentSession),
+      sessions: sessions,
+      lastResult: getLastResult_()
+    }), 'Tracking reanudado.');
   }
 
-  var now = new Date();
-  saveActiveSession_({
+  currentSession = {
     active_event_id: context.eventId,
     calendar_id: context.calendarId,
     event_title: context.eventTitle,
-    started_at_ms: now.getTime(),
-    started_at_iso: now.toISOString(),
+    started_at_ms: nowMs,
+    started_at_iso: new Date(nowMs).toISOString(),
     elapsed_ms: 0,
     status: 'RUNNING'
-  });
+  };
+  sessions.push(currentSession);
+  saveSessions_(sessions);
 
   clearLastResult_();
 
   return buildNotificationResponse_(buildBaseCard_({
-    eventContext: context,
-    activeSession: getActiveSession_(),
+    eventContext: buildEventContextFromSession_(currentSession),
+    sessions: sessions,
     lastResult: null
   }), 'Tracking iniciado.');
 }
 
 function onPauseTracking(e) {
   var context = getEventContext_(e);
-  var activeSession = getActiveSession_();
-  var targetContext = activeSession ? buildEventContextFromSession_(activeSession) : context;
+  var sessions = getSessions_();
+  var runningSession = getRunningSession_(sessions);
+  var targetSession = getSessionForEvent_(sessions, context) || runningSession;
+  var targetContext = targetSession ? buildEventContextFromSession_(targetSession) : context;
 
-  if (!activeSession || activeSession.status !== 'RUNNING') {
+  if (!targetSession || targetSession.status !== 'RUNNING') {
     return buildNotificationResponse_(buildBaseCard_({
       eventContext: context,
-      activeSession: activeSession,
+      sessions: sessions,
       lastResult: getLastResult_()
     }), 'No hay una sesión activa en ejecución para este evento.');
   }
 
-  var nowMs = Date.now();
-  var startedAtMs = Number(activeSession.started_at_ms || nowMs);
-  activeSession.elapsed_ms = Number(activeSession.elapsed_ms || 0) + Math.max(0, nowMs - startedAtMs);
-  activeSession.started_at_ms = nowMs;
-  activeSession.status = 'PAUSED';
-  saveActiveSession_(activeSession);
+  pauseSessionInPlace_(targetSession, Date.now());
+  saveSessions_(sessions);
 
   return buildNotificationResponse_(buildBaseCard_({
     eventContext: targetContext,
-    activeSession: activeSession,
+    sessions: sessions,
     lastResult: getLastResult_()
   }), 'Tracking pausado.');
 }
 
 function onResumeTracking(e) {
   var context = getEventContext_(e);
-  var activeSession = getActiveSession_();
-  var targetContext = activeSession ? buildEventContextFromSession_(activeSession) : context;
+  var sessions = getSessions_();
+  var targetSession = getSessionForEvent_(sessions, context);
+  var runningSession = getRunningSession_(sessions);
+  var nowMs = Date.now();
 
-  if (!activeSession || activeSession.status !== 'PAUSED') {
+  if (!targetSession || targetSession.status !== 'PAUSED') {
     return buildNotificationResponse_(buildBaseCard_({
       eventContext: context,
-      activeSession: activeSession,
+      sessions: sessions,
       lastResult: getLastResult_()
     }), 'No hay una sesión pausada para este evento.');
   }
 
-  activeSession.started_at_ms = Date.now();
-  activeSession.status = 'RUNNING';
-  saveActiveSession_(activeSession);
+  if (runningSession && !isSameEvent_(runningSession, context)) {
+    pauseSessionInPlace_(runningSession, nowMs);
+  }
+
+  resumeSessionInPlace_(targetSession, nowMs);
+  saveSessions_(sessions);
 
   return buildNotificationResponse_(buildBaseCard_({
-    eventContext: targetContext,
-    activeSession: activeSession,
+    eventContext: buildEventContextFromSession_(targetSession),
+    sessions: sessions,
     lastResult: getLastResult_()
   }), 'Tracking reanudado.');
 }
 
 function onStopTracking(e) {
   var context = getEventContext_(e);
-  var activeSession = getActiveSession_();
+  var sessions = getSessions_();
+  var runningSession = getRunningSession_(sessions);
+  var targetSession = getSessionForEvent_(sessions, context) || runningSession;
 
-  if (!activeSession) {
+  if (!targetSession) {
     return buildNotificationResponse_(buildBaseCard_({
       eventContext: context,
-      activeSession: activeSession,
+      sessions: sessions,
       lastResult: getLastResult_()
     }), 'No hay una sesión activa para este evento.');
   }
 
-  var durationMs = calculateSessionDurationMs_(activeSession);
-  var normalizedContext = buildEventContextFromSession_(activeSession) || resolveCardEventContext_(e, activeSession, getLastResult_()) || context;
+  var sessionContext = buildEventContextFromSession_(targetSession);
+  var durationMs = calculateSessionDurationMs_(targetSession);
+  var normalizedContext = sessionContext || resolveCardEventContext_(e, sessions, getLastResult_()) || context;
   var result = {
     event_id: normalizedContext.eventId,
     calendar_id: normalizedContext.calendarId,
@@ -144,25 +159,25 @@ function onStopTracking(e) {
     stopped_at_iso: new Date().toISOString()
   };
 
+  sessions = removeSessionByEvent_(sessions, sessionContext);
+  saveSessions_(sessions);
   saveLastResult_(result);
-  clearActiveSession_();
 
   return buildNotificationResponse_(buildBaseCard_({
     eventContext: buildEventContextFromResult_(result),
-    activeSession: null,
+    sessions: sessions,
     lastResult: result
   }), 'Sesión detenida. Usa "Guardar en evento" solo si quieres escribir en Calendar.');
 }
 
 function onSaveLastResultToEvent(e) {
-  var context = getEventContext_(e);
   var lastResult = getLastResult_();
-  var activeSession = getActiveSession_();
+  var sessions = getSessions_();
 
   if (!lastResult) {
     return buildNotificationResponse_(buildBaseCard_({
-      eventContext: resolveCardEventContext_(e, activeSession, null),
-      activeSession: activeSession,
+      eventContext: resolveCardEventContext_(e, sessions, null),
+      sessions: sessions,
       lastResult: null
     }), 'No hay resultados pendientes para guardar.');
   }
@@ -174,47 +189,53 @@ function onSaveLastResultToEvent(e) {
     clearLastResult_();
     return buildNotificationResponse_(buildBaseCard_({
       eventContext: targetContext,
-      activeSession: activeSession,
+      sessions: sessions,
       lastResult: null
     }), 'Evento actualizado con éxito: ' + updateResult.durationLine);
   } catch (error) {
     return buildNotificationResponse_(buildBaseCard_({
       eventContext: targetContext,
-      activeSession: activeSession,
+      sessions: sessions,
       lastResult: lastResult
     }), (error && error.message ? error.message : 'No se pudo guardar en el evento.') + ' Resultado pendiente conservado.');
   }
 }
 
 function onDiscardLastResult(e) {
-  var activeSession = getActiveSession_();
-  var context = resolveCardEventContext_(e, activeSession, getLastResult_());
+  var sessions = getSessions_();
+  var context = resolveCardEventContext_(e, sessions, getLastResult_());
   clearLastResult_();
 
   return buildNotificationResponse_(buildBaseCard_({
     eventContext: context,
-    activeSession: activeSession,
+    sessions: sessions,
     lastResult: null
   }), 'Resultado pendiente descartado.');
 }
 
 function refreshCard_(e, message) {
-  var activeSession = getActiveSession_();
+  var sessions = getSessions_();
   var lastResult = getLastResult_();
-  var eventContext = resolveCardEventContext_(e, activeSession, lastResult);
+  var eventContext = resolveCardEventContext_(e, sessions, lastResult);
 
   return buildNotificationResponse_(buildBaseCard_({
     eventContext: eventContext,
-    activeSession: activeSession,
+    sessions: sessions,
     lastResult: lastResult
   }), message || 'Actualizado.');
 }
 
-function resolveCardEventContext_(e, activeSession, lastResult) {
+function resolveCardEventContext_(e, sessions, lastResult) {
   var context = getEventContext_(e);
+  var runningSession = getRunningSession_(sessions);
+  var fallbackSession = sessions && sessions.length ? sessions[0] : null;
 
-  if (!context.eventId && activeSession) {
-    context = buildEventContextFromSession_(activeSession);
+  if (!context.eventId && runningSession) {
+    context = buildEventContextFromSession_(runningSession);
+  }
+
+  if (!context.eventId && fallbackSession) {
+    context = buildEventContextFromSession_(fallbackSession);
   }
 
   if (!context.eventId && lastResult) {
@@ -225,8 +246,9 @@ function resolveCardEventContext_(e, activeSession, lastResult) {
     return null;
   }
 
-  if (isUntitledEvent_(context.eventTitle) && activeSession && isSameEvent_(activeSession, context)) {
-    context.eventTitle = activeSession.event_title || context.eventTitle;
+  var sessionForContext = getSessionForEvent_(sessions, context);
+  if (isUntitledEvent_(context.eventTitle) && sessionForContext) {
+    context.eventTitle = sessionForContext.event_title || context.eventTitle;
   }
 
   if (isUntitledEvent_(context.eventTitle) && lastResult && lastResult.event_id === context.eventId && lastResult.calendar_id === context.calendarId) {
@@ -234,19 +256,6 @@ function resolveCardEventContext_(e, activeSession, lastResult) {
   }
 
   return context;
-}
-
-function calculateSessionDurationMs_(session) {
-  if (!session) {
-    return 0;
-  }
-
-  var elapsedMs = Number(session.elapsed_ms || 0);
-  if (session.status === 'RUNNING') {
-    elapsedMs += Math.max(0, Date.now() - Number(session.started_at_ms || Date.now()));
-  }
-
-  return Math.max(0, elapsedMs);
 }
 
 function buildNotificationResponse_(card, message) {

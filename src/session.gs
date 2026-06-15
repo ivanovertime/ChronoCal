@@ -23,16 +23,79 @@ function deleteStoredValue_(key) {
   getUserProperties_().deleteProperty(key);
 }
 
+function normalizeSession_(session) {
+  if (!session || !session.active_event_id || !session.calendar_id) {
+    return null;
+  }
+
+  return {
+    active_event_id: session.active_event_id,
+    calendar_id: session.calendar_id,
+    event_title: session.event_title || 'Evento sin título',
+    started_at_ms: Number(session.started_at_ms || Date.now()),
+    started_at_iso: session.started_at_iso || new Date(Number(session.started_at_ms || Date.now())).toISOString(),
+    elapsed_ms: Number(session.elapsed_ms || 0),
+    status: session.status === 'PAUSED' ? 'PAUSED' : 'RUNNING'
+  };
+}
+
+function getSessions_() {
+  var rawSessions = getStoredJson_(CHRONOCAL_CONFIG.sessionsPropertyKey);
+  var sessions = [];
+
+  if (rawSessions && Array.isArray(rawSessions)) {
+    sessions = rawSessions
+      .map(normalizeSession_)
+      .filter(function(session) {
+        return Boolean(session);
+      });
+  }
+
+  // Migration path for older installs that used a single active session key.
+  if (!sessions.length) {
+    var legacySession = normalizeSession_(getStoredJson_(CHRONOCAL_CONFIG.sessionPropertyKey));
+    if (legacySession) {
+      sessions = [legacySession];
+      saveSessions_(sessions);
+    }
+  }
+
+  return sessions;
+}
+
+function saveSessions_(sessions) {
+  var normalized = (sessions || [])
+    .map(normalizeSession_)
+    .filter(function(session) {
+      return Boolean(session);
+    });
+
+  setStoredJson_(CHRONOCAL_CONFIG.sessionsPropertyKey, normalized);
+
+  // Keep legacy key in sync for compatibility with old cards/functions.
+  if (normalized.length) {
+    setStoredJson_(CHRONOCAL_CONFIG.sessionPropertyKey, normalized[0]);
+  } else {
+    deleteStoredValue_(CHRONOCAL_CONFIG.sessionPropertyKey);
+  }
+}
+
+function clearSessions_() {
+  deleteStoredValue_(CHRONOCAL_CONFIG.sessionsPropertyKey);
+  deleteStoredValue_(CHRONOCAL_CONFIG.sessionPropertyKey);
+}
+
 function getActiveSession_() {
-  return getStoredJson_(CHRONOCAL_CONFIG.sessionPropertyKey);
+  var sessions = getSessions_();
+  return getRunningSession_(sessions) || (sessions.length ? sessions[0] : null);
 }
 
 function saveActiveSession_(session) {
-  setStoredJson_(CHRONOCAL_CONFIG.sessionPropertyKey, session);
+  saveSessions_([session]);
 }
 
 function clearActiveSession_() {
-  deleteStoredValue_(CHRONOCAL_CONFIG.sessionPropertyKey);
+  clearSessions_();
 }
 
 function getLastResult_() {
@@ -170,6 +233,72 @@ function buildEventContextFromSession_(session) {
     eventTitle: session.event_title || 'Evento sin título',
     timeZone: session.timeZone || Session.getScriptTimeZone()
   };
+}
+
+function getSessionForEvent_(sessions, context) {
+  if (!context || !context.eventId) {
+    return null;
+  }
+
+  var list = sessions || [];
+  for (var i = 0; i < list.length; i++) {
+    if (isSameEvent_(list[i], context)) {
+      return list[i];
+    }
+  }
+
+  return null;
+}
+
+function removeSessionByEvent_(sessions, context) {
+  var list = sessions || [];
+  return list.filter(function(session) {
+    return !isSameEvent_(session, context);
+  });
+}
+
+function getRunningSession_(sessions) {
+  var list = sessions || [];
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].status === 'RUNNING') {
+      return list[i];
+    }
+  }
+
+  return null;
+}
+
+function calculateSessionDurationMs_(session) {
+  if (!session) {
+    return 0;
+  }
+
+  var elapsedMs = Number(session.elapsed_ms || 0);
+  if (session.status === 'RUNNING') {
+    elapsedMs += Math.max(0, Date.now() - Number(session.started_at_ms || Date.now()));
+  }
+
+  return Math.max(0, elapsedMs);
+}
+
+function pauseSessionInPlace_(session, nowMs) {
+  if (!session || session.status !== 'RUNNING') {
+    return;
+  }
+
+  var currentMs = Number(nowMs || Date.now());
+  session.elapsed_ms = Number(session.elapsed_ms || 0) + Math.max(0, currentMs - Number(session.started_at_ms || currentMs));
+  session.started_at_ms = currentMs;
+  session.status = 'PAUSED';
+}
+
+function resumeSessionInPlace_(session, nowMs) {
+  if (!session) {
+    return;
+  }
+
+  session.started_at_ms = Number(nowMs || Date.now());
+  session.status = 'RUNNING';
 }
 
 function buildEventContextFromResult_(result) {
