@@ -45,7 +45,7 @@ var CHRONOCAL_I18N = {
       start: 'Iniciar',
       break: 'Descanso',
       resumeAll: 'Reanudar',
-      finishWork: 'Terminar trabajo',
+      finishWork: 'Terminar',
       openSettings: 'Ajustes',
       back: 'Volver'
     },
@@ -177,7 +177,7 @@ var CHRONOCAL_I18N = {
       start: 'Start',
       break: 'Break',
       resumeAll: 'Resume',
-      finishWork: 'Finish work',
+      finishWork: 'Finish',
       openSettings: 'Settings',
       back: 'Back'
     },

@@ -27,7 +27,7 @@
       },
       "universalActions": [
         {
-          "label": "Ajustes",
+          "label": "Settings",
           "runFunction": "onOpenSettings"
         }
       ],
