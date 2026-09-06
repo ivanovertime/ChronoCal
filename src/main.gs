@@ -353,43 +353,24 @@ function onToggleDescriptionMode(e) {
   settings.writeDescription = !settings.writeDescription;
   saveSettings_(settings);
 
-  var sessions = getSessions_();
-  return buildNotificationResponse_(buildBaseCard_({
-    eventContext: resolveCardEventContext_(e, sessions),
-    sessions: sessions,
-    locale: locale
-  }), settings.writeDescription
+  return buildSettingsCardResponse_(locale, settings.writeDescription
     ? t_('notify.descriptionWriteEnabled', null, locale)
     : t_('notify.descriptionWriteDisabled', null, locale));
 }
 
-function onToggleLanguage(e) {
-  var settings = getSettings_();
-  var currentLocale = resolveLocale_(e, settings);
-  var nextLocale = currentLocale === 'es' ? 'en' : 'es';
-  settings.userLocale = nextLocale;
-  settings.localeSource = 'manual';
-  saveSettings_(settings);
-
-  var sessions = getSessions_();
-  return buildNotificationResponse_(buildBaseCard_({
-    eventContext: resolveCardEventContext_(e, sessions),
-    sessions: sessions,
-    locale: nextLocale
-  }), nextLocale === 'en'
-    ? t_('notify.languageChangedEnglish', null, nextLocale)
-    : t_('notify.languageChangedSpanish', null, nextLocale));
-}
-
-function onToggleStopMode(e) {
+function onStopModeChange(e) {
   var settings = getSettings_();
   var locale = resolveLocale_(e, settings);
   var modes = CHRONOCAL_CONFIG.stopModes || ['DESCRIPTION', 'END_TIME', 'BOTH'];
-  var currentIndex = modes.indexOf(settings.stopMode);
-  settings.stopMode = modes[(currentIndex + 1) % modes.length];
-  saveSettings_(settings);
+  var selected = getFormInputValue_(e, 'stopMode');
 
-  return buildSettingsCardResponse_(locale, t_(getStopModeNotificationKey_(settings.stopMode), null, locale));
+  if (modes.indexOf(selected) !== -1 && selected !== settings.stopMode) {
+    settings.stopMode = selected;
+    saveSettings_(settings);
+    return buildSettingsCardResponse_(locale, t_(getStopModeNotificationKey_(settings.stopMode), null, locale));
+  }
+
+  return buildSettingsCardResponse_(locale, '');
 }
 
 function onToggleSheetsExport(e) {
@@ -401,6 +382,24 @@ function onToggleSheetsExport(e) {
   return buildSettingsCardResponse_(locale, settings.sheetsExportEnabled
     ? t_('notify.sheetsExportEnabled', null, locale)
     : t_('notify.sheetsExportDisabled', null, locale));
+}
+
+function onLanguageChange(e) {
+  var settings = getSettings_();
+  var locale = resolveLocale_(e, settings);
+  var selected = getFormInputValue_(e, 'language');
+
+  if (selected === 'es' || selected === 'en') {
+    settings.userLocale = selected;
+    settings.localeSource = 'manual';
+    saveSettings_(settings);
+
+    return buildSettingsCardResponse_(selected, selected === 'en'
+      ? t_('notify.languageChangedEnglish', null, selected)
+      : t_('notify.languageChangedSpanish', null, selected));
+  }
+
+  return buildSettingsCardResponse_(locale, '');
 }
 
 function onOpenSettings(e) {

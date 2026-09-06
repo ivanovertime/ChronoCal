@@ -15,9 +15,14 @@ var CHRONOCAL_I18N = {
     settings: {
       title: 'Configuración',
       stopModeLabel: 'Al detener',
+      stopModeCurrent: 'Modo actual',
       stopModeDescription: 'Descripción',
       stopModeEndTime: 'Ajustar hora de fin',
       stopModeBoth: 'Descripción + hora de fin',
+      trackingSection: 'Seguimiento',
+      exportSection: 'Exportación',
+      languageLabel: 'Idioma',
+      descriptionLabel: 'Modificar descripción',
       sheetsExportLabel: 'Exportación a Sheets',
       on: 'Activado',
       off: 'Desactivado',
@@ -25,7 +30,10 @@ var CHRONOCAL_I18N = {
       spreadsheetHint: 'ID o URL de la hoja (opcional)',
       sheetNameLabel: 'Nombre de la hoja',
       createSpreadsheet: 'Crear hoja nueva',
-      saveSettings: 'Guardar ajustes'
+      saveSettings: 'Guardar ajustes',
+      saveDescription: 'Guardar (descripción)',
+      saveEndTime: 'Guardar (hora de fin)',
+      saveBoth: 'Guardar (ambos)'
     },
     action: {
       pause: 'Pausar',
@@ -38,13 +46,8 @@ var CHRONOCAL_I18N = {
       pauseAll: 'Pausar todo',
       stopAll: 'Detener todo',
       refreshTimes: 'Actualizar tiempos',
-      descriptionEnabled: 'Modificar descripción: activado',
-      descriptionDisabled: 'Modificar descripción: desactivado',
-      languageSwitchToEnglish: 'Idioma: cambiar a English',
-      languageSwitchToSpanish: 'Language: switch to Español',
       openSettings: 'Ajustes',
-      back: 'Volver',
-      change: 'Cambiar'
+      back: 'Volver'
     },
     status: {
       running: 'En curso',
@@ -137,9 +140,14 @@ var CHRONOCAL_I18N = {
     settings: {
       title: 'Settings',
       stopModeLabel: 'On stop',
+      stopModeCurrent: 'Current mode',
       stopModeDescription: 'Description',
       stopModeEndTime: 'Adjust end time',
       stopModeBoth: 'Description + end time',
+      trackingSection: 'Tracking',
+      exportSection: 'Export',
+      languageLabel: 'Language',
+      descriptionLabel: 'Write description',
       sheetsExportLabel: 'Sheets export',
       on: 'Enabled',
       off: 'Disabled',
@@ -147,7 +155,10 @@ var CHRONOCAL_I18N = {
       spreadsheetHint: 'Spreadsheet ID or URL (optional)',
       sheetNameLabel: 'Sheet name',
       createSpreadsheet: 'Create new spreadsheet',
-      saveSettings: 'Save settings'
+      saveSettings: 'Save settings',
+      saveDescription: 'Save (description)',
+      saveEndTime: 'Save (end time)',
+      saveBoth: 'Save (both)'
     },
     action: {
       pause: 'Pause',
@@ -160,13 +171,8 @@ var CHRONOCAL_I18N = {
       pauseAll: 'Pause all',
       stopAll: 'Stop all',
       refreshTimes: 'Refresh times',
-      descriptionEnabled: 'Edit description: enabled',
-      descriptionDisabled: 'Edit description: disabled',
-      languageSwitchToEnglish: 'Language: switch to English',
-      languageSwitchToSpanish: 'Idioma: cambiar a Espanol',
       openSettings: 'Settings',
-      back: 'Back',
-      change: 'Change'
+      back: 'Back'
     },
     status: {
       running: 'Running',

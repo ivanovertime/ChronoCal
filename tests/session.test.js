@@ -141,20 +141,24 @@ test('getSessions_() migrates the legacy last-result no longer double-counts', (
   assert.equal(store.getProperty('CHRONOCAL_LAST_RESULT'), null);
 });
 
-test('getFormInputValue_() reads both input.value and value shapes', () => {
+test('getFormInputValue_() reads input.value, stringInputs, and value shapes', () => {
   const { ctx } = loadSource();
   const e = {
     commonEventObject: {
       formInputs: {
         a: { input: { value: 'hello' } },
-        b: { value: 'world' },
-        c: { input: { value: '' } }
+        b: { stringInputs: { value: 'dropdown' } },
+        c: { stringInputs: { values: ['selection'] } },
+        d: { value: 'world' },
+        e: { input: { value: '' } }
       }
     }
   };
   assert.equal(ctx.getFormInputValue_(e, 'a'), 'hello');
-  assert.equal(ctx.getFormInputValue_(e, 'b'), 'world');
-  assert.equal(ctx.getFormInputValue_(e, 'c'), '');
+  assert.equal(ctx.getFormInputValue_(e, 'b'), 'dropdown');
+  assert.equal(ctx.getFormInputValue_(e, 'c'), 'selection');
+  assert.equal(ctx.getFormInputValue_(e, 'd'), 'world');
+  assert.equal(ctx.getFormInputValue_(e, 'e'), '');
   assert.equal(ctx.getFormInputValue_(e, 'missing'), '');
   assert.equal(ctx.getFormInputValue_({}, 'a'), '');
 });

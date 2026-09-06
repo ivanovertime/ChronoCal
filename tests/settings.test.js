@@ -27,19 +27,24 @@ test('normalizeSettings_() applies defaults and validates fields', () => {
   assert.equal(invalid.stopMode, 'DESCRIPTION');
 });
 
-test('onToggleStopMode() cycles DESCRIPTION -> END_TIME -> BOTH and notifies', () => {
+test('onStopModeChange() saves the selected stop mode and rebuilds', () => {
   const { ctx, store } = loadSource();
   store.setProperty('CHRONOCAL_SETTINGS', JSON.stringify({}));
 
-  const first = ctx.onToggleStopMode({ commonEventObject: {} });
+  const selection = (stopMode) => ({
+    commonEventObject: { formInputs: { stopMode: { stringInputs: { values: [stopMode] } } } }
+  });
+
+  const first = ctx.onStopModeChange(selection('END_TIME'));
   assert.equal(ctx.getSettings_().stopMode, 'END_TIME');
   assert.ok(first.__notification.__text.includes('hora de fin'));
+  assert.ok(first.__nav.some((entry) => entry[0] === 'updateCard'));
 
-  const second = ctx.onToggleStopMode({ commonEventObject: {} });
+  ctx.onStopModeChange(selection('BOTH'));
   assert.equal(ctx.getSettings_().stopMode, 'BOTH');
 
-  const third = ctx.onToggleStopMode({ commonEventObject: {} });
-  assert.equal(ctx.getSettings_().stopMode, 'DESCRIPTION');
+  ctx.onStopModeChange(selection('INVALID'));
+  assert.equal(ctx.getSettings_().stopMode, 'BOTH');
 });
 
 test('onToggleSheetsExport() flips the setting', () => {
@@ -51,6 +56,18 @@ test('onToggleSheetsExport() flips the setting', () => {
 
   ctx.onToggleSheetsExport({ commonEventObject: {} });
   assert.equal(ctx.getSettings_().sheetsExportEnabled, false);
+});
+
+test('onLanguageChange() sets the language and forces manual mode', () => {
+  const { ctx, store } = loadSource();
+  store.setProperty('CHRONOCAL_SETTINGS', JSON.stringify({}));
+
+  const response = ctx.onLanguageChange({
+    commonEventObject: { formInputs: { language: { stringInputs: { values: ['en'] } } } }
+  });
+  assert.equal(ctx.getSettings_().userLocale, 'en');
+  assert.equal(ctx.getSettings_().localeSource, 'manual');
+  assert.ok(response.__nav.some((entry) => entry[0] === 'updateCard'));
 });
 
 test('getDefaultSettings_() and saveSettings_() round-trip', () => {

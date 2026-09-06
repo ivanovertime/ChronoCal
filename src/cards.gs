@@ -6,6 +6,7 @@ function buildBaseCard_(options) {
   var entries = buildTrackingEntries_(eventContext, sessions);
 
   var cardBuilder = CardService.newCardBuilder();
+  cardBuilder.setFixedFooter(buildFixedFooter_(locale));
 
   if (!entries.length) {
     var emptySection = CardService.newCardSection();
@@ -18,7 +19,6 @@ function buildBaseCard_(options) {
     );
     cardBuilder.addSection(emptySection);
     cardBuilder.addSection(buildGeneralActionsSection_(sessions, settings, locale));
-    cardBuilder.addSection(buildFooterSection_(locale));
     return cardBuilder.build();
   }
 
@@ -27,7 +27,6 @@ function buildBaseCard_(options) {
   }
 
   cardBuilder.addSection(buildGeneralActionsSection_(sessions, settings, locale));
-  cardBuilder.addSection(buildFooterSection_(locale));
 
   return cardBuilder.build();
 }
@@ -101,8 +100,8 @@ function buildEntryActions_(status, context, settings, locale) {
     buttons.addButton(createButton_(t_('action.resume', null, locale), 'onResumeTracking', context));
     buttons.addButton(createButton_(t_('action.stop', null, locale), 'onStopTracking', context));
   } else if (status === 'STOPPED') {
-    buttons.addButton(createButton_(t_('action.resume', null, locale), 'onResumeTracking', context));
     buttons.addButton(createButton_(buildStopModeApplyLabel_(settings, locale), 'onSaveSession', context));
+    buttons.addButton(createButton_(t_('action.resume', null, locale), 'onResumeTracking', context));
     buttons.addButton(createButton_(t_('action.exportToSheets', null, locale), 'onExportSessionToSheets', context));
     buttons.addButton(createButton_(t_('action.discard', null, locale), 'onDiscardSession', context));
   } else {
@@ -120,13 +119,6 @@ function buildGeneralActionsSection_(sessions, settings, locale) {
   buttons.addButton(createGlobalButton_(t_('action.stopAll', null, locale), 'onStopAll'));
   buttons.addButton(createGlobalButton_(t_('action.exportToSheets', null, locale), 'onExportToSheets'));
   buttons.addButton(createGlobalButton_(t_('action.refreshTimes', null, locale), 'onRefreshCard'));
-  buttons.addButton(createGlobalButton_(settings.writeDescription
-    ? t_('action.descriptionEnabled', null, locale)
-    : t_('action.descriptionDisabled', null, locale), 'onToggleDescriptionMode'));
-  buttons.addButton(createGlobalButton_(locale === 'es'
-    ? t_('action.languageSwitchToEnglish', null, locale)
-    : t_('action.languageSwitchToSpanish', null, locale), 'onToggleLanguage'));
-  buttons.addButton(createGlobalButton_(t_('action.openSettings', null, locale), 'onOpenSettings'));
 
   section.addWidget(buttons);
   return section;
@@ -139,24 +131,52 @@ function buildSettingsCard_(options) {
   var cardBuilder = CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader().setTitle(t_('settings.title', null, locale)));
 
-  cardBuilder.addSection(buildSettingsSection_(settings, locale));
+  cardBuilder.addSection(buildTrackingSettingsSection_(settings, locale));
+  cardBuilder.addSection(buildExportSettingsSection_(settings, locale));
+  cardBuilder.addSection(buildLanguageSettingsSection_(settings, locale));
   cardBuilder.addSection(buildSettingsNavSection_(locale));
 
   return cardBuilder.build();
 }
 
-function buildSettingsSection_(settings, locale) {
-  var section = CardService.newCardSection();
-  var spreadSheetValue = settings.sheetsSpreadsheetUrl || settings.sheetsSpreadsheetId;
+function buildTrackingSettingsSection_(settings, locale) {
+  var section = CardService.newCardSection().setHeader(t_('settings.trackingSection', null, locale));
+
+  var stopModeInput = CardService.newSelectionInput()
+    .setType(CardService.SelectionInputType.DROP_DOWN)
+    .setFieldName('stopMode')
+    .setOnChangeAction(buildGlobalAction_('onStopModeChange'));
+  var modes = CHRONOCAL_CONFIG.stopModes || ['DESCRIPTION', 'END_TIME', 'BOTH'];
+  for (var i = 0; i < modes.length; i++) {
+    stopModeInput.addItem(getStopModeLabel_(modes[i], locale), modes[i], modes[i] === settings.stopMode);
+  }
 
   section.addWidget(
     CardService.newDecoratedText()
       .setTopLabel(t_('settings.stopModeLabel', null, locale))
-      .setText(getStopModeLabel_(settings.stopMode, locale))
-      .setButton(CardService.newTextButton()
-        .setText(t_('action.change', null, locale))
-        .setOnClickAction(buildGlobalAction_('onToggleStopMode')))
+      .setText(t_('settings.stopModeCurrent', null, locale) + ': ' + getStopModeLabel_(settings.stopMode, locale))
+      .setMultiline(true)
   );
+  section.addWidget(stopModeInput);
+
+  section.addWidget(
+    CardService.newDecoratedText()
+      .setTopLabel(t_('settings.descriptionLabel', null, locale))
+      .setText(settings.writeDescription
+        ? t_('settings.on', null, locale)
+        : t_('settings.off', null, locale))
+      .setSwitch(CardService.newSwitch()
+        .setFieldName('writeDescription')
+        .setSelected(settings.writeDescription)
+        .setOnChangeAction(buildGlobalAction_('onToggleDescriptionMode')))
+  );
+
+  return section;
+}
+
+function buildExportSettingsSection_(settings, locale) {
+  var section = CardService.newCardSection().setHeader(t_('settings.exportSection', null, locale));
+  var spreadSheetValue = settings.sheetsSpreadsheetUrl || settings.sheetsSpreadsheetId;
 
   section.addWidget(
     CardService.newDecoratedText()
@@ -164,9 +184,10 @@ function buildSettingsSection_(settings, locale) {
       .setText(settings.sheetsExportEnabled
         ? t_('settings.on', null, locale)
         : t_('settings.off', null, locale))
-      .setButton(CardService.newTextButton()
-        .setText(t_('action.change', null, locale))
-        .setOnClickAction(buildGlobalAction_('onToggleSheetsExport')))
+      .setSwitch(CardService.newSwitch()
+        .setFieldName('sheetsExportEnabled')
+        .setSelected(settings.sheetsExportEnabled)
+        .setOnChangeAction(buildGlobalAction_('onToggleSheetsExport')))
   );
 
   section.addWidget(
@@ -196,6 +217,21 @@ function buildSettingsSection_(settings, locale) {
   return section;
 }
 
+function buildLanguageSettingsSection_(settings, locale) {
+  var section = CardService.newCardSection().setHeader(t_('settings.languageLabel', null, locale));
+
+  var languageInput = CardService.newSelectionInput()
+    .setType(CardService.SelectionInputType.DROP_DOWN)
+    .setFieldName('language')
+    .setOnChangeAction(buildGlobalAction_('onLanguageChange'))
+    .addItem('Español', 'es', settings.userLocale === 'es')
+    .addItem('English', 'en', settings.userLocale === 'en');
+
+  section.addWidget(languageInput);
+
+  return section;
+}
+
 function buildSettingsNavSection_(locale) {
   var section = CardService.newCardSection();
   var buttons = CardService.newButtonSet();
@@ -209,27 +245,29 @@ function buildSettingsNavSection_(locale) {
 
 function buildStopModeApplyLabel_(settings, locale) {
   if (settings.stopMode === 'END_TIME') {
-    return t_('settings.stopModeEndTime', null, locale);
+    return t_('settings.saveEndTime', null, locale);
   }
   if (settings.stopMode === 'BOTH') {
-    return t_('settings.stopModeBoth', null, locale);
+    return t_('settings.saveBoth', null, locale);
   }
-  return t_('action.saveToEventDescription', null, locale);
+  return t_('settings.saveDescription', null, locale);
 }
 
-function buildFooterSection_(locale) {
-  var section = CardService.newCardSection();
-  var docsLink = CardService.newOpenLink()
-    .setUrl(CHRONOCAL_CONFIG.docsUrl)
-    .setOpenAs(CardService.OpenAs.FULL_SIZE)
-    .setOnClose(CardService.OnClose.NOTHING);
+function buildFixedFooter_(locale) {
+  var settingsButton = CardService.newTextButton()
+    .setText(t_('action.openSettings', null, locale))
+    .setOnClickAction(buildGlobalAction_('onOpenSettings'));
 
-  section.addWidget(
-    CardService.newTextButton()
-      .setText(t_('common.docs', null, locale))
-      .setOpenLink(docsLink)
-  );
-  return section;
+  var docsButton = CardService.newTextButton()
+    .setText(t_('common.docs', null, locale))
+    .setOpenLink(CardService.newOpenLink()
+      .setUrl(CHRONOCAL_CONFIG.docsUrl)
+      .setOpenAs(CardService.OpenAs.FULL_SIZE)
+      .setOnClose(CardService.OnClose.NOTHING));
+
+  return CardService.newFixedFooter()
+    .setPrimaryButton(settingsButton)
+    .setSecondaryButton(docsButton);
 }
 
 function statusLabel_(status, locale) {

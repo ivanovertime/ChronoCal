@@ -130,6 +130,8 @@ function makeCardServiceStub() {
     'newCardSection',
     'newDecoratedText',
     'newTextInput',
+    'newSwitch',
+    'newSelectionInput',
     'newButtonSet',
     'newImageButton',
     'newTextButton',
@@ -138,7 +140,8 @@ function makeCardServiceStub() {
     'newNavigation',
     'newNotification',
     'newOpenLink',
-    'newIconImage'
+    'newIconImage',
+    'newFixedFooter'
   ];
 
   builders.forEach((name) => {
@@ -148,6 +151,9 @@ function makeCardServiceStub() {
   CardService.Icon = {
     CLOCK: 'CLOCK',
     VIDEO_PLAY: 'VIDEO_PLAY'
+  };
+  CardService.SelectionInputType = {
+    DROP_DOWN: 'DROP_DOWN'
   };
   CardService.OpenAs = {
     FULL_SIZE: 'FULL_SIZE'

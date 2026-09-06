@@ -280,6 +280,14 @@ function getFormInputValue_(e, fieldName) {
     return String(entry.input.value);
   }
 
+  if (entry.stringInputs && entry.stringInputs.value !== undefined && entry.stringInputs.value !== null) {
+    return String(entry.stringInputs.value);
+  }
+
+  if (entry.stringInputs && entry.stringInputs.values && entry.stringInputs.values.length) {
+    return String(entry.stringInputs.values[0]);
+  }
+
   if (entry.value !== undefined && entry.value !== null) {
     return String(entry.value);
   }

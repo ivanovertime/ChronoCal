@@ -22,15 +22,15 @@ test('buildStopModeApplyLabel_() reflects stop mode', () => {
   const { ctx } = loadSource();
   assert.equal(
     ctx.buildStopModeApplyLabel_({ stopMode: 'END_TIME' }, 'en'),
-    'Adjust end time'
+    'Save (end time)'
   );
   assert.equal(
     ctx.buildStopModeApplyLabel_({ stopMode: 'DESCRIPTION' }, 'es'),
-    'Guardar en la descripción del evento'
+    'Guardar (descripción)'
   );
   assert.equal(
     ctx.buildStopModeApplyLabel_({ stopMode: 'BOTH' }, 'en'),
-    'Description + end time'
+    'Save (both)'
   );
 });
 
