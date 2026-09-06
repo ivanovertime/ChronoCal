@@ -13,6 +13,7 @@ No external backend, no third-party storage, and no browser-side timer dependenc
 - Adjusts the event end time to match tracked duration (configurable stop mode).
 - Exports stopped sessions to Google Sheets.
 - Builds a summary sheet (per-date and per-event rollups) inside the export spreadsheet.
+- Settings live on a dedicated card, opened from the main panel.
 - Handles event resolution across calendars and recurring instances.
 
 ## Repository structure

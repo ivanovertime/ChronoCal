@@ -41,7 +41,10 @@ var CHRONOCAL_I18N = {
       descriptionEnabled: 'Modificar descripción: activado',
       descriptionDisabled: 'Modificar descripción: desactivado',
       languageSwitchToEnglish: 'Idioma: cambiar a English',
-      languageSwitchToSpanish: 'Language: switch to Español'
+      languageSwitchToSpanish: 'Language: switch to Español',
+      openSettings: 'Ajustes',
+      back: 'Volver',
+      change: 'Cambiar'
     },
     status: {
       running: 'En curso',
@@ -160,7 +163,10 @@ var CHRONOCAL_I18N = {
       descriptionEnabled: 'Edit description: enabled',
       descriptionDisabled: 'Edit description: disabled',
       languageSwitchToEnglish: 'Language: switch to English',
-      languageSwitchToSpanish: 'Idioma: cambiar a Espanol'
+      languageSwitchToSpanish: 'Idioma: cambiar a Espanol',
+      openSettings: 'Settings',
+      back: 'Back',
+      change: 'Change'
     },
     status: {
       running: 'Running',

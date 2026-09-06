@@ -69,23 +69,40 @@ function makeUtilitiesStub() {
 
 function chainable() {
   const raw = {};
+  const navMethods = ['pushCard', 'popCard', 'popToRoot', 'updateCard'];
   const proxy = new Proxy(raw, {
     get(target, prop) {
       if (prop === 'build') {
-        return () => ({
-          type: 'built',
-          __notification: raw.__notification,
-          __text: raw.__text,
-          __params: raw.__params
-        });
+        return () => {
+          const collectNav = () => {
+            const nav = (raw.__nav || []).concat();
+            if (raw.__navigation && raw.__navigation.__nav) {
+              for (let i = 0; i < raw.__navigation.__nav.length; i++) {
+                nav.push(raw.__navigation.__nav[i].slice());
+              }
+            }
+            return nav;
+          };
+          return {
+            type: 'built',
+            __notification: raw.__notification,
+            __text: raw.__text,
+            __params: raw.__params,
+            __nav: collectNav()
+          };
+        };
       }
-      if (prop === '__notification' || prop === '__text' || prop === '__params') {
+      if (prop === '__notification' || prop === '__text' || prop === '__params' || prop === '__nav') {
         return raw[prop];
       }
       if (typeof prop !== 'string') {
         return undefined;
       }
       return (...args) => {
+        if (navMethods.indexOf(prop) !== -1) {
+          raw.__nav = raw.__nav || [];
+          raw.__nav.push([prop].concat(args));
+        }
         if (prop === 'setText') {
           raw.__text = args[0];
         }
@@ -94,6 +111,9 @@ function chainable() {
         }
         if (prop === 'setNotification') {
           raw.__notification = args[0];
+        }
+        if (prop === 'setNavigation') {
+          raw.__navigation = args[0];
         }
         return proxy;
       };
@@ -106,6 +126,7 @@ function makeCardServiceStub() {
   const CardService = {};
   const builders = [
     'newCardBuilder',
+    'newCardHeader',
     'newCardSection',
     'newDecoratedText',
     'newTextInput',

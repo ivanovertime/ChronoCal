@@ -18,7 +18,6 @@ function buildBaseCard_(options) {
     );
     cardBuilder.addSection(emptySection);
     cardBuilder.addSection(buildGeneralActionsSection_(sessions, settings, locale));
-    cardBuilder.addSection(buildSettingsSection_(settings, locale));
     cardBuilder.addSection(buildFooterSection_(locale));
     return cardBuilder.build();
   }
@@ -28,7 +27,6 @@ function buildBaseCard_(options) {
   }
 
   cardBuilder.addSection(buildGeneralActionsSection_(sessions, settings, locale));
-  cardBuilder.addSection(buildSettingsSection_(settings, locale));
   cardBuilder.addSection(buildFooterSection_(locale));
 
   return cardBuilder.build();
@@ -97,18 +95,18 @@ function buildEntryActions_(status, context, settings, locale) {
   var buttons = CardService.newButtonSet();
 
   if (status === 'RUNNING') {
-    buttons.addButton(createIconButton_('pause', t_('action.pause', null, locale), 'onPauseTracking', context));
-    buttons.addButton(createIconButton_('stop', t_('action.stop', null, locale), 'onStopTracking', context));
+    buttons.addButton(createButton_(t_('action.pause', null, locale), 'onPauseTracking', context));
+    buttons.addButton(createButton_(t_('action.stop', null, locale), 'onStopTracking', context));
   } else if (status === 'PAUSED') {
-    buttons.addButton(createIconButton_('play_arrow', t_('action.resume', null, locale), 'onResumeTracking', context));
-    buttons.addButton(createIconButton_('stop', t_('action.stop', null, locale), 'onStopTracking', context));
+    buttons.addButton(createButton_(t_('action.resume', null, locale), 'onResumeTracking', context));
+    buttons.addButton(createButton_(t_('action.stop', null, locale), 'onStopTracking', context));
   } else if (status === 'STOPPED') {
-    buttons.addButton(createIconButton_('play_arrow', t_('action.resume', null, locale), 'onResumeTracking', context));
-    buttons.addButton(createIconButton_('check', buildStopModeApplyLabel_(settings, locale), 'onSaveSession', context));
-    buttons.addButton(createIconButton_('table_chart', t_('action.exportToSheets', null, locale), 'onExportSessionToSheets', context));
-    buttons.addButton(createIconButton_('delete', t_('action.discard', null, locale), 'onDiscardSession', context));
+    buttons.addButton(createButton_(t_('action.resume', null, locale), 'onResumeTracking', context));
+    buttons.addButton(createButton_(buildStopModeApplyLabel_(settings, locale), 'onSaveSession', context));
+    buttons.addButton(createButton_(t_('action.exportToSheets', null, locale), 'onExportSessionToSheets', context));
+    buttons.addButton(createButton_(t_('action.discard', null, locale), 'onDiscardSession', context));
   } else {
-    buttons.addButton(createIconButton_('play_arrow', t_('action.start', null, locale), 'onStartTracking', context));
+    buttons.addButton(createButton_(t_('action.start', null, locale), 'onStartTracking', context));
   }
 
   return buttons;
@@ -118,23 +116,37 @@ function buildGeneralActionsSection_(sessions, settings, locale) {
   var section = CardService.newCardSection().setHeader(t_('card.generalActions', null, locale));
   var buttons = CardService.newButtonSet();
 
-  buttons.addButton(createGlobalIconButton_('pause', t_('action.pauseAll', null, locale), 'onPauseAll'));
-  buttons.addButton(createGlobalIconButton_('stop', t_('action.stopAll', null, locale), 'onStopAll'));
-  buttons.addButton(createGlobalIconButton_('table_chart', t_('action.exportToSheets', null, locale), 'onExportToSheets'));
-  buttons.addButton(createGlobalIconButton_('refresh', t_('action.refreshTimes', null, locale), 'onRefreshCard'));
-  buttons.addButton(createGlobalIconButton_(settings.writeDescription ? 'edit' : 'edit_off', settings.writeDescription
+  buttons.addButton(createGlobalButton_(t_('action.pauseAll', null, locale), 'onPauseAll'));
+  buttons.addButton(createGlobalButton_(t_('action.stopAll', null, locale), 'onStopAll'));
+  buttons.addButton(createGlobalButton_(t_('action.exportToSheets', null, locale), 'onExportToSheets'));
+  buttons.addButton(createGlobalButton_(t_('action.refreshTimes', null, locale), 'onRefreshCard'));
+  buttons.addButton(createGlobalButton_(settings.writeDescription
     ? t_('action.descriptionEnabled', null, locale)
     : t_('action.descriptionDisabled', null, locale), 'onToggleDescriptionMode'));
-  buttons.addButton(createGlobalIconButton_('translate', locale === 'es'
+  buttons.addButton(createGlobalButton_(locale === 'es'
     ? t_('action.languageSwitchToEnglish', null, locale)
     : t_('action.languageSwitchToSpanish', null, locale), 'onToggleLanguage'));
+  buttons.addButton(createGlobalButton_(t_('action.openSettings', null, locale), 'onOpenSettings'));
 
   section.addWidget(buttons);
   return section;
 }
 
+function buildSettingsCard_(options) {
+  var settings = options.settings || getSettings_();
+  var locale = getSupportedLocale_(options.locale || settings.userLocale) || CHRONOCAL_CONFIG.defaultLocale;
+
+  var cardBuilder = CardService.newCardBuilder()
+    .setHeader(CardService.newCardHeader().setTitle(t_('settings.title', null, locale)));
+
+  cardBuilder.addSection(buildSettingsSection_(settings, locale));
+  cardBuilder.addSection(buildSettingsNavSection_(locale));
+
+  return cardBuilder.build();
+}
+
 function buildSettingsSection_(settings, locale) {
-  var section = CardService.newCardSection().setHeader(t_('settings.title', null, locale));
+  var section = CardService.newCardSection();
   var spreadSheetValue = settings.sheetsSpreadsheetUrl || settings.sheetsSpreadsheetId;
 
   section.addWidget(
@@ -142,7 +154,7 @@ function buildSettingsSection_(settings, locale) {
       .setTopLabel(t_('settings.stopModeLabel', null, locale))
       .setText(getStopModeLabel_(settings.stopMode, locale))
       .setButton(CardService.newTextButton()
-        .setText(t_('action.resume', null, locale))
+        .setText(t_('action.change', null, locale))
         .setOnClickAction(buildGlobalAction_('onToggleStopMode')))
   );
 
@@ -153,7 +165,7 @@ function buildSettingsSection_(settings, locale) {
         ? t_('settings.on', null, locale)
         : t_('settings.off', null, locale))
       .setButton(CardService.newTextButton()
-        .setText(t_('action.resume', null, locale))
+        .setText(t_('action.change', null, locale))
         .setOnClickAction(buildGlobalAction_('onToggleSheetsExport')))
   );
 
@@ -180,6 +192,17 @@ function buildSettingsSection_(settings, locale) {
     .setText(t_('settings.createSpreadsheet', null, locale))
     .setOnClickAction(buildGlobalAction_('onCreateSpreadsheet')));
   section.addWidget(buttonSet);
+
+  return section;
+}
+
+function buildSettingsNavSection_(locale) {
+  var section = CardService.newCardSection();
+  var buttons = CardService.newButtonSet();
+  buttons.addButton(CardService.newTextButton()
+    .setText(t_('action.back', null, locale))
+    .setOnClickAction(buildGlobalAction_('onCloseSettings')));
+  section.addWidget(buttons);
 
   return section;
 }
@@ -229,22 +252,16 @@ function statusIcon_(status) {
   return CardService.Icon.CLOCK;
 }
 
-function createIconButton_(iconName, altText, functionName, context) {
-  return CardService.newImageButton()
-    .setAltText(altText)
-    .setIconUrl(chronoActionIconUrl_(iconName))
+function createButton_(label, functionName, context) {
+  return CardService.newTextButton()
+    .setText(label)
     .setOnClickAction(buildCardAction_(functionName, context));
 }
 
-function createGlobalIconButton_(iconName, altText, functionName) {
-  return CardService.newImageButton()
-    .setAltText(altText)
-    .setIconUrl(chronoActionIconUrl_(iconName))
+function createGlobalButton_(label, functionName) {
+  return CardService.newTextButton()
+    .setText(label)
     .setOnClickAction(buildGlobalAction_(functionName));
-}
-
-function chronoActionIconUrl_(iconName) {
-  return 'https://www.gstatic.com/images/icons/material/system/1x/' + iconName + '_grey600_24dp.png';
 }
 
 function buildGlobalAction_(functionName) {

@@ -48,3 +48,13 @@ test('formatTimeForUser_() and formatDateKey_() format UTC timestamps', () => {
   assert.equal(ctx.formatTimeForUser_(date, 'Etc/UTC'), '09:05');
   assert.equal(ctx.formatDateKey_(date, 'Etc/UTC'), '2026-01-02');
 });
+
+test('buildSettingsCard_() renders a card with the current settings', () => {
+  const { ctx } = loadSource();
+  const settings = ctx.getDefaultSettings_();
+  const card = ctx.buildSettingsCard_({
+    settings: settings,
+    locale: 'en'
+  });
+  assert.equal(card.type, 'built');
+});

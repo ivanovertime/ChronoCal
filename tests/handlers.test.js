@@ -99,3 +99,51 @@ test('onDiscardSession() removes the session', () => {
   assert.equal(response.__notification.__text, 'Session discarded.');
   assert.equal(ctx.getSessions_().length, 0);
 });
+
+test('onOpenSettings() pushes the settings card', () => {
+  const { ctx, store } = loadSource();
+  store.setProperty('CHRONOCAL_SETTINGS', JSON.stringify({ userLocale: 'en' }));
+
+  const response = ctx.onOpenSettings({ commonEventObject: {} });
+  assert.ok(response.__nav.some((entry) => entry[0] === 'pushCard'));
+  assert.equal(response.__notification, undefined);
+});
+
+test('onCloseSettings() pops the settings card', () => {
+  const { ctx } = loadSource();
+  const response = ctx.onCloseSettings({ commonEventObject: {} });
+  assert.ok(response.__nav.some((entry) => entry[0] === 'popCard'));
+});
+
+test('onSaveSettings() saves, pops back, and notifies', () => {
+  const { ctx, store } = loadSource();
+  const longId = '1AbCdefG1234567890XYZabcDEF456789XYZ';
+  store.setProperty('CHRONOCAL_SETTINGS', JSON.stringify({ userLocale: 'en', sheetsSpreadsheetId: longId }));
+
+  const response = ctx.onSaveSettings({
+    commonEventObject: {
+      formInputs: {
+        sheetsTarget: { input: { value: longId } },
+        sheetName: { input: { value: 'My Log' } }
+      }
+    }
+  });
+  assert.equal(ctx.getSettings_().sheetsSheetName, 'My Log');
+  assert.ok(response.__nav.some((entry) => entry[0] === 'popCard'));
+  assert.equal(response.__notification.__text, 'Settings saved.');
+});
+
+test('onSaveSettings() rejects an invalid spreadsheet reference and stays', () => {
+  const { ctx, store } = loadSource();
+  store.setProperty('CHRONOCAL_SETTINGS', JSON.stringify({ userLocale: 'en' }));
+
+  const response = ctx.onSaveSettings({
+    commonEventObject: {
+      formInputs: {
+        sheetsTarget: { input: { value: 'not a valid reference' } }
+      }
+    }
+  });
+  assert.equal(response.__notification.__text, 'Invalid spreadsheet reference.');
+  assert.equal(response.__nav.length, 0);
+});
