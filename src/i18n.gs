@@ -1,8 +1,7 @@
 var CHRONOCAL_I18N = {
   es: {
     common: {
-      untitledEvent: 'Evento sin título',
-      docs: 'Docs'
+      untitledEvent: 'Evento sin título'
     },
     card: {
       emptyTrackingTitle: 'Sin eventos en seguimiento',
@@ -10,7 +9,8 @@ var CHRONOCAL_I18N = {
       currentEvent: 'Evento actual',
       openSuffix: 'abierto',
       timeLabel: 'Tiempo',
-      generalActions: 'Acciones generales'
+      today: 'hoy',
+      refresh: 'Actualizar'
     },
     settings: {
       title: 'Configuración',
@@ -43,9 +43,9 @@ var CHRONOCAL_I18N = {
       exportToSheets: 'Exportar a Google Sheets',
       discard: 'Descartar',
       start: 'Iniciar',
-      pauseAll: 'Pausar todo',
-      stopAll: 'Detener todo',
-      refreshTimes: 'Actualizar tiempos',
+      break: 'Descanso',
+      resumeAll: 'Reanudar',
+      finishWork: 'Terminar trabajo',
       openSettings: 'Ajustes',
       back: 'Volver'
     },
@@ -53,7 +53,10 @@ var CHRONOCAL_I18N = {
       running: 'En curso',
       paused: 'Pausado',
       stopped: 'Detenido',
-      notStarted: 'Sin iniciar'
+      notStarted: 'Sin iniciar',
+      working: 'Trabajando',
+      onBreak: 'En descanso',
+      dayFinished: 'Día terminado'
     },
     notify: {
       panelUpdated: 'Panel actualizado.',
@@ -76,6 +79,10 @@ var CHRONOCAL_I18N = {
       noRunningEvents: 'No hay eventos en ejecución.',
       stoppedCount: 'Detenidos {{count}} eventos.',
       noActiveEvents: 'No hay eventos activos.',
+      resumedCount: 'Reanudados {{count}} eventos.',
+      noPausedEvents: 'No hay eventos pausados.',
+      dayFinished: 'Día terminado · {{total}}.',
+      dayFinishedPartial: 'Día terminado. Se aplicaron {{applied}} y {{failed}} fallaron.',
       stopBeforeExport: 'Detén un evento antes de exportarlo a Sheets.',
       exportManySuccess: 'Exportadas {{count}} sesiones a Google Sheets.',
       exportFailed: 'No se pudo exportar a Sheets.',
@@ -126,8 +133,7 @@ var CHRONOCAL_I18N = {
   },
   en: {
     common: {
-      untitledEvent: 'Untitled event',
-      docs: 'Docs'
+      untitledEvent: 'Untitled event'
     },
     card: {
       emptyTrackingTitle: 'No tracked events',
@@ -135,7 +141,8 @@ var CHRONOCAL_I18N = {
       currentEvent: 'Current event',
       openSuffix: 'open',
       timeLabel: 'Time',
-      generalActions: 'General actions'
+      today: 'today',
+      refresh: 'Refresh'
     },
     settings: {
       title: 'Settings',
@@ -168,9 +175,9 @@ var CHRONOCAL_I18N = {
       exportToSheets: 'Export to Google Sheets',
       discard: 'Discard',
       start: 'Start',
-      pauseAll: 'Pause all',
-      stopAll: 'Stop all',
-      refreshTimes: 'Refresh times',
+      break: 'Break',
+      resumeAll: 'Resume',
+      finishWork: 'Finish work',
       openSettings: 'Settings',
       back: 'Back'
     },
@@ -178,7 +185,10 @@ var CHRONOCAL_I18N = {
       running: 'Running',
       paused: 'Paused',
       stopped: 'Stopped',
-      notStarted: 'Not started'
+      notStarted: 'Not started',
+      working: 'Working',
+      onBreak: 'On break',
+      dayFinished: 'Workday finished'
     },
     notify: {
       panelUpdated: 'Panel refreshed.',
@@ -201,6 +211,10 @@ var CHRONOCAL_I18N = {
       noRunningEvents: 'No events are currently running.',
       stoppedCount: 'Stopped {{count}} events.',
       noActiveEvents: 'There are no active events.',
+      resumedCount: 'Resumed {{count}} events.',
+      noPausedEvents: 'There are no paused events.',
+      dayFinished: 'Workday finished · {{total}}.',
+      dayFinishedPartial: 'Workday finished. Applied {{applied}}, {{failed}} failed.',
       stopBeforeExport: 'Stop an event before exporting to Sheets.',
       exportManySuccess: 'Exported {{count}} sessions to Google Sheets.',
       exportFailed: 'Could not export to Sheets.',

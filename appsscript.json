@@ -25,6 +25,12 @@
       "layoutProperties": {
         "primaryColor": "#1a73e8"
       },
+      "universalActions": [
+        {
+          "label": "Ajustes",
+          "runFunction": "onOpenSettings"
+        }
+      ],
       "homepageTrigger": {
         "runFunction": "buildHomeCard"
       }

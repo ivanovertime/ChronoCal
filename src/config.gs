@@ -4,7 +4,6 @@ var CHRONOCAL_CONFIG = {
   lastResultPropertyKey: 'CHRONOCAL_LAST_RESULT',
   eventMetaCachePropertyKey: 'CHRONOCAL_EVENT_META_CACHE',
   settingsPropertyKey: 'CHRONOCAL_SETTINGS',
-  docsUrl: 'https://github.com/ivanovertime/ChronoCal/tree/trunk/docs',
   descriptionTag: '⌛ Duración Real:',
   defaultSheetName: 'ChronoCal',
   summarySheetName: 'ChronoCal Summary',

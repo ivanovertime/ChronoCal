@@ -87,7 +87,7 @@ push and pull request.
 
 - Manifest: [appsscript.json](appsscript.json)
 - OAuth scopes include Calendar add-on execution, Calendar read/write, and Sheets.
-- Description writing and the stop mode are configurable from the Settings card (opened from the pinned footer).
+- Description writing and the stop mode are configurable from the Settings card (opened from the ⋮ menu).
 
 ## Icon source attribution
 

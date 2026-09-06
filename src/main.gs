@@ -211,6 +211,18 @@ function onSaveSession(e) {
   }
 }
 
+function applyStopModeToSession_(session, settings, locale) {
+  var context = enrichEventContextFromCalendar_(buildEventContextFromSession_(session));
+  var durationMs = calculateSessionDurationMs_(session);
+
+  if (settings.stopMode === 'END_TIME' || settings.stopMode === 'BOTH') {
+    updateEventEndTime_(context, durationMs, locale);
+  }
+  if (settings.stopMode === 'DESCRIPTION' || settings.stopMode === 'BOTH') {
+    updateEventDescription_(context, durationMs, locale);
+  }
+}
+
 function onDiscardSession(e) {
   var context = getEventContext_(e);
   var sessions = getSessions_();
@@ -249,9 +261,9 @@ function onPauseAll(e) {
   }), count ? t_('notify.pausedCount', { count: count }, locale) : t_('notify.noRunningEvents', null, locale));
 }
 
-function onStopAll(e) {
+function onResumeAll(e) {
   var sessions = getSessions_();
-  var count = stopAllSessions_(sessions, Date.now());
+  var count = resumeAllSessions_(sessions, Date.now());
   var locale = getCurrentLocale_(e);
   saveSessions_(sessions);
 
@@ -259,7 +271,53 @@ function onStopAll(e) {
     eventContext: resolveCardEventContext_(e, sessions),
     sessions: sessions,
     locale: locale
-  }), count ? t_('notify.stoppedCount', { count: count }, locale) : t_('notify.noActiveEvents', null, locale));
+  }), count ? t_('notify.resumedCount', { count: count }, locale) : t_('notify.noPausedEvents', null, locale));
+}
+
+function onFinishWork(e) {
+  var sessions = getSessions_();
+  var settings = getSettings_();
+  var locale = getCurrentLocale_(e);
+
+  var justStopped = sessions.filter(function(session) {
+    return session.status === 'RUNNING' || session.status === 'PAUSED';
+  });
+  var stopped = stopAllSessions_(sessions, Date.now());
+
+  if (!stopped) {
+    sessions = getStoppedSessions_(sessions);
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: resolveCardEventContext_(e, sessions),
+      sessions: sessions,
+      locale: locale
+    }), t_('notify.noActiveEvents', null, locale));
+  }
+
+  var applied = 0;
+  var failed = 0;
+  for (var i = 0; i < justStopped.length; i++) {
+    try {
+      applyStopModeToSession_(justStopped[i], settings, locale);
+      applied++;
+    } catch (error) {
+      failed++;
+    }
+  }
+
+  saveSessions_(sessions);
+
+  var message;
+  if (failed > 0) {
+    message = t_('notify.dayFinishedPartial', { applied: applied, failed: failed }, locale);
+  } else {
+    message = t_('notify.dayFinished', { total: formatDurationCompact_(getTodayTotalMs_(sessions, Date.now())) }, locale);
+  }
+
+  return buildNotificationResponse_(buildBaseCard_({
+    eventContext: resolveCardEventContext_(e, sessions),
+    sessions: sessions,
+    locale: locale
+  }), message);
 }
 
 function onExportToSheets(e) {
@@ -406,18 +464,24 @@ function onOpenSettings(e) {
   var settings = getSettings_();
   var locale = resolveLocale_(e, settings);
 
-  return CardService.newActionResponseBuilder()
-    .setNavigation(CardService.newNavigation().pushCard(buildSettingsCard_({
+  return CardService.newUniversalActionResponseBuilder()
+    .displayAddOnCards([buildSettingsCard_({
       settings: settings,
       locale: locale
-    })))
+    })])
     .build();
 }
 
 function onCloseSettings(e) {
-  return CardService.newActionResponseBuilder()
-    .setNavigation(CardService.newNavigation().popCard())
-    .build();
+  var sessions = getSessions_();
+  var settings = getSettings_();
+  var locale = resolveLocale_(e, settings);
+
+  return buildNotificationResponse_(buildBaseCard_({
+    eventContext: resolveCardEventContext_(e, sessions),
+    sessions: sessions,
+    locale: locale
+  }), '');
 }
 
 function onSaveSettings(e) {
@@ -448,7 +512,7 @@ function onSaveSettings(e) {
   settings.sheetsSheetName = sheetName;
   saveSettings_(settings);
 
-  return buildPopCardResponse_(t_('notify.settingsSaved', null, locale));
+  return buildHomeCardResponse_(t_('notify.settingsSaved', null, locale));
 }
 
 function onCreateSpreadsheet(e) {
@@ -527,9 +591,12 @@ function buildStayResponse_(message) {
     .build();
 }
 
-function buildPopCardResponse_(message) {
-  return CardService.newActionResponseBuilder()
-    .setNavigation(CardService.newNavigation().popCard())
-    .setNotification(CardService.newNotification().setText(message))
-    .build();
+function buildHomeCardResponse_(message) {
+  var sessions = getSessions_();
+  var settings = getSettings_();
+  return buildNotificationResponse_(buildBaseCard_({
+    eventContext: resolveCardEventContext_(null, sessions),
+    sessions: sessions,
+    locale: settings.userLocale
+  }), message || '');
 }

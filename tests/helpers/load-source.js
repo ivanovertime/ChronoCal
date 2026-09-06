@@ -83,16 +83,17 @@ function chainable() {
             }
             return nav;
           };
-          return {
-            type: 'built',
-            __notification: raw.__notification,
-            __text: raw.__text,
-            __params: raw.__params,
-            __nav: collectNav()
-          };
+      return {
+        type: 'built',
+        __notification: raw.__notification,
+        __text: raw.__text,
+        __params: raw.__params,
+        __nav: collectNav(),
+        __cards: raw.__cards
+      };
         };
       }
-      if (prop === '__notification' || prop === '__text' || prop === '__params' || prop === '__nav') {
+      if (prop === '__notification' || prop === '__text' || prop === '__params' || prop === '__nav' || prop === '__cards') {
         return raw[prop];
       }
       if (typeof prop !== 'string') {
@@ -102,6 +103,9 @@ function chainable() {
         if (navMethods.indexOf(prop) !== -1) {
           raw.__nav = raw.__nav || [];
           raw.__nav.push([prop].concat(args));
+        }
+        if (prop === 'displayAddOnCards') {
+          raw.__cards = args[0];
         }
         if (prop === 'setText') {
           raw.__text = args[0];
@@ -141,7 +145,8 @@ function makeCardServiceStub() {
     'newNotification',
     'newOpenLink',
     'newIconImage',
-    'newFixedFooter'
+    'newFixedFooter',
+    'newUniversalActionResponseBuilder'
   ];
 
   builders.forEach((name) => {
@@ -255,6 +260,57 @@ function makeRichSpreadsheetStub() {
   };
 }
 
+function makeRichCalendarStub() {
+  const events = {
+    patchCount: 0,
+    events: {
+      'evt-2': {
+        id: 'evt-2',
+        summary: 'Client call',
+        description: '',
+        start: { dateTime: '2026-01-01T09:00:00.000Z', timeZone: 'Etc/UTC' },
+        end: { dateTime: '2026-01-01T10:00:00.000Z', timeZone: 'Etc/UTC' }
+      }
+    }
+  };
+  return {
+    events,
+    Events: {
+      get(calendarId, eventId) {
+        const event = events.events[eventId];
+        if (!event) {
+          throw new Error('Event not found: ' + eventId);
+        }
+        return event;
+      },
+      patch(payload, calendarId, eventId) {
+        events.patchCount++;
+        const event = events.events[eventId];
+        if (event) {
+          if (payload.description !== undefined) {
+            event.description = payload.description;
+          }
+          if (payload.end) {
+            event.end = payload.end;
+          }
+        }
+        return event;
+      },
+      list() {
+        return { items: [] };
+      },
+      instances() {
+        return { items: [] };
+      }
+    },
+    CalendarList: {
+      list() {
+        return { items: [] };
+      }
+    }
+  };
+}
+
 function loadSource(options) {
   const opts = options || {};
   const store = opts.store || createPropertiesStore();
@@ -297,5 +353,6 @@ function loadSource(options) {
 module.exports = {
   loadSource,
   createPropertiesStore,
-  makeRichSpreadsheetStub
+  makeRichSpreadsheetStub,
+  makeRichCalendarStub
 };

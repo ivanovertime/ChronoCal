@@ -178,6 +178,17 @@ function formatDateForUser_(dateValue, timeZone, locale) {
   return Utilities.formatDate(dateValue, timeZone || Session.getScriptTimeZone(), getDateFormatPatternForLocale_(locale));
 }
 
+function formatDurationCompact_(durationMs) {
+  var totalMinutes = Math.max(0, Math.floor((durationMs || 0) / 60000));
+  var hours = Math.floor(totalMinutes / 60);
+  var minutes = totalMinutes % 60;
+
+  if (hours > 0) {
+    return hours + 'h ' + minutes + 'm';
+  }
+  return minutes + 'm';
+}
+
 function formatTimeForUser_(dateValue, timeZone) {
   return Utilities.formatDate(dateValue, timeZone || Session.getScriptTimeZone(), 'HH:mm');
 }
@@ -576,6 +587,31 @@ function getStoppedSessions_(sessions) {
   return (sessions || []).filter(function(session) {
     return session.status === 'STOPPED';
   });
+}
+
+function resumeAllSessions_(sessions, nowMs) {
+  var list = sessions || [];
+  var count = 0;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].status === 'PAUSED') {
+      resumeSessionInPlace_(list[i], nowMs);
+      count++;
+    }
+  }
+  return count;
+}
+
+function getTodayTotalMs_(sessions, nowMs) {
+  var list = sessions || [];
+  var today = formatDateKey_(new Date(nowMs), Session.getScriptTimeZone());
+  var total = 0;
+  for (var i = 0; i < list.length; i++) {
+    var started = new Date(list[i].started_at_ms || list[i].started_at_iso || nowMs);
+    if (formatDateKey_(started, Session.getScriptTimeZone()) === today) {
+      total += calculateSessionDurationMs_(list[i]);
+    }
+  }
+  return total;
 }
 
 function isUntitledEvent_(title) {
