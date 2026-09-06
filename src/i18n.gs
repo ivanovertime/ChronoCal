@@ -1,7 +1,7 @@
 var CHRONOCAL_I18N = {
   es: {
     common: {
-      untitledEvent: 'Evento sin titulo',
+      untitledEvent: 'Evento sin título',
       docs: 'Docs'
     },
     card: {
@@ -12,21 +12,36 @@ var CHRONOCAL_I18N = {
       timeLabel: 'Tiempo',
       generalActions: 'Acciones generales'
     },
+    settings: {
+      title: 'Configuración',
+      stopModeLabel: 'Al detener',
+      stopModeDescription: 'Descripción',
+      stopModeEndTime: 'Ajustar hora de fin',
+      stopModeBoth: 'Descripción + hora de fin',
+      sheetsExportLabel: 'Exportación a Sheets',
+      on: 'Activado',
+      off: 'Desactivado',
+      spreadsheetLabel: 'Hoja de cálculo',
+      spreadsheetHint: 'ID o URL de la hoja (opcional)',
+      sheetNameLabel: 'Nombre de la hoja',
+      createSpreadsheet: 'Crear hoja nueva',
+      saveSettings: 'Guardar ajustes'
+    },
     action: {
       pause: 'Pausar',
       stop: 'Detener',
       resume: 'Reanudar',
-      saveToEventDescription: 'Guardar en la descripcion del evento',
+      saveToEventDescription: 'Guardar en la descripción del evento',
       exportToSheets: 'Exportar a Google Sheets',
       discard: 'Descartar',
       start: 'Iniciar',
       pauseAll: 'Pausar todo',
       stopAll: 'Detener todo',
       refreshTimes: 'Actualizar tiempos',
-      descriptionEnabled: 'Modificar descripcion: activado',
-      descriptionDisabled: 'Modificar descripcion: desactivado',
+      descriptionEnabled: 'Modificar descripción: activado',
+      descriptionDisabled: 'Modificar descripción: desactivado',
       languageSwitchToEnglish: 'Idioma: cambiar a English',
-      languageSwitchToSpanish: 'Language: switch to Espanol'
+      languageSwitchToSpanish: 'Language: switch to Español'
     },
     status: {
       running: 'En curso',
@@ -37,41 +52,53 @@ var CHRONOCAL_I18N = {
     notify: {
       panelUpdated: 'Panel actualizado.',
       cannotIdentifyCurrentEvent: 'No se pudo identificar el evento actual.',
-      sessionAlreadyRunning: 'Esta sesion ya esta en ejecucion.',
+      sessionAlreadyRunning: 'Esta sesión ya está en ejecución.',
       trackingResumed: 'Tracking reanudado.',
       trackingStarted: 'Tracking iniciado.',
-      noRunningSessionForEvent: 'No hay una sesion activa en ejecucion para este evento.',
+      noRunningSessionForEvent: 'No hay una sesión activa en ejecución para este evento.',
       trackingPaused: 'Tracking pausado.',
-      noPausedSessionForEvent: 'No hay una sesion pausada para este evento.',
-      noActiveSessionForEvent: 'No hay una sesion activa para este evento.',
-      sessionStoppedSavePrompt: 'Sesion detenida. Pulsa guardar para escribirla en el evento.',
-      noSessionToSave: 'No hay una sesion para guardar en este evento.',
-      descriptionDisabledExportInstead: 'La modificacion de descripcion esta desactivada. Exporta a Sheets en su lugar.',
+      noPausedSessionForEvent: 'No hay una sesión pausada para este evento.',
+      noActiveSessionForEvent: 'No hay una sesión activa para este evento.',
+      sessionStoppedSavePrompt: 'Sesión detenida. Pulsa guardar para escribirla en el evento.',
+      noSessionToSave: 'No hay una sesión para guardar en este evento.',
+      descriptionDisabledExportInstead: 'La modificación de descripción está desactivada. Exporta a Sheets en su lugar.',
       eventUpdated: 'Evento actualizado: {{durationLine}}',
       saveToEventFailed: 'No se pudo guardar en el evento.',
-      sessionKept: 'Sesion conservada.',
-      sessionDiscarded: 'Sesion descartada.',
+      sessionKept: 'Sesión conservada.',
+      sessionDiscarded: 'Sesión descartada.',
       pausedCount: 'Pausados {{count}} eventos.',
-      noRunningEvents: 'No hay eventos en ejecucion.',
+      noRunningEvents: 'No hay eventos en ejecución.',
       stoppedCount: 'Detenidos {{count}} eventos.',
       noActiveEvents: 'No hay eventos activos.',
-      stopBeforeExport: 'Deten un evento antes de exportarlo a Sheets.',
+      stopBeforeExport: 'Detén un evento antes de exportarlo a Sheets.',
       exportManySuccess: 'Exportadas {{count}} sesiones a Google Sheets.',
       exportFailed: 'No se pudo exportar a Sheets.',
       sessionsKept: 'Sesiones conservadas.',
-      noSessionToExport: 'No hay una sesion para exportar en este evento.',
-      exportOneSuccess: 'Sesion exportada a Google Sheets ({{count}}).',
-      descriptionWriteEnabled: 'Se podra modificar la descripcion del evento.',
-      descriptionWriteDisabled: 'No se modificara la descripcion del evento.',
+      noSessionToExport: 'No hay una sesión para exportar en este evento.',
+      exportOneSuccess: 'Sesión exportada a Google Sheets ({{count}}).',
+      descriptionWriteEnabled: 'Se podrá modificar la descripción del evento.',
+      descriptionWriteDisabled: 'No se modificará la descripción del evento.',
       languageChangedEnglish: 'Idioma cambiado a English.',
-      languageChangedSpanish: 'Language switched to Espanol.',
-      refreshed: 'Actualizado.'
+      languageChangedSpanish: 'Language switched to Español.',
+      refreshed: 'Actualizado.',
+      settingsSaved: 'Ajustes guardados.',
+      stopModeChangedDescription: 'Al detener se escribirá en la descripción.',
+      stopModeChangedEndTime: 'Al detener se ajustará la hora de fin del evento.',
+      stopModeChangedBoth: 'Al detener se escribirá en la descripción y se ajustará la hora de fin.',
+      sheetsExportEnabled: 'Exportación a Sheets activada.',
+      sheetsExportDisabled: 'Exportación a Sheets desactivada.',
+      createSpreadsheetSuccess: 'Hoja creada: {{url}}',
+      exportDisabledConfigure: 'Activa la exportación a Sheets desde los ajustes.',
+      endTimeApplied: 'Hora de fin ajustada a {{endTime}}.',
+      endTimeNotApplicableAllDay: 'No se puede ajustar la hora de fin en un evento de día completo.',
+      bothApplied: 'Descripción actualizada y hora de fin ajustada.',
+      invalidSpreadsheetReference: 'La referencia de la hoja de cálculo no es válida.'
     },
     calendar: {
-      eventNotFound: 'No se encontro el evento activo o no tienes permisos suficientes.'
+      eventNotFound: 'No se encontró el evento activo o no tienes permisos suficientes.'
     },
     duration: {
-      tag: 'Duracion real:',
+      tag: 'Duración real:',
       dateLabel: 'Fecha'
     },
     sheet: {
@@ -79,11 +106,16 @@ var CHRONOCAL_I18N = {
       event: 'Evento',
       calendar: 'Calendario',
       status: 'Estado',
-      duration: 'Duracion',
-      durationMinutes: 'Duracion (min)',
+      duration: 'Duración',
+      durationMinutes: 'Duración (min)',
       start: 'Inicio',
       end: 'Fin',
-      spreadsheetTitle: 'ChronoCal - Registro de tiempo'
+      spreadsheetTitle: 'ChronoCal - Registro de tiempo',
+      summaryTitle: 'Resumen',
+      byDate: 'Por fecha',
+      byEvent: 'Por evento',
+      date: 'Fecha',
+      sessions: 'Sesiones'
     }
   },
   en: {
@@ -98,6 +130,21 @@ var CHRONOCAL_I18N = {
       openSuffix: 'open',
       timeLabel: 'Time',
       generalActions: 'General actions'
+    },
+    settings: {
+      title: 'Settings',
+      stopModeLabel: 'On stop',
+      stopModeDescription: 'Description',
+      stopModeEndTime: 'Adjust end time',
+      stopModeBoth: 'Description + end time',
+      sheetsExportLabel: 'Sheets export',
+      on: 'Enabled',
+      off: 'Disabled',
+      spreadsheetLabel: 'Spreadsheet',
+      spreadsheetHint: 'Spreadsheet ID or URL (optional)',
+      sheetNameLabel: 'Sheet name',
+      createSpreadsheet: 'Create new spreadsheet',
+      saveSettings: 'Save settings'
     },
     action: {
       pause: 'Pause',
@@ -148,11 +195,23 @@ var CHRONOCAL_I18N = {
       sessionsKept: 'Sessions were kept.',
       noSessionToExport: 'There is no session to export for this event.',
       exportOneSuccess: 'Session exported to Google Sheets ({{count}}).',
-      descriptionWriteEnabled: 'Event description can now be modified.',
+descriptionWriteEnabled: 'Event description can now be modified.',
       descriptionWriteDisabled: 'Event description will not be modified.',
       languageChangedEnglish: 'Language switched to English.',
-      languageChangedSpanish: 'Idioma cambiado a Espanol.',
-      refreshed: 'Refreshed.'
+      languageChangedSpanish: 'Idioma cambiado a Español.',
+      refreshed: 'Refreshed.',
+      settingsSaved: 'Settings saved.',
+      stopModeChangedDescription: 'Stopped sessions will be written to the description.',
+      stopModeChangedEndTime: 'Stopped sessions will adjust the event end time.',
+      stopModeChangedBoth: 'Stopped sessions will update the description and adjust the end time.',
+      sheetsExportEnabled: 'Sheets export enabled.',
+      sheetsExportDisabled: 'Sheets export disabled.',
+      createSpreadsheetSuccess: 'Spreadsheet created: {{url}}',
+      exportDisabledConfigure: 'Enable Sheets export from the settings.',
+      endTimeApplied: 'Event end time set to {{endTime}}.',
+      endTimeNotApplicableAllDay: 'Cannot adjust the end time of an all-day event.',
+      bothApplied: 'Description updated and end time adjusted.',
+      invalidSpreadsheetReference: 'Invalid spreadsheet reference.'
     },
     calendar: {
       eventNotFound: 'Active event was not found or permission is missing.'
@@ -170,7 +229,12 @@ var CHRONOCAL_I18N = {
       durationMinutes: 'Duration (min)',
       start: 'Start',
       end: 'End',
-      spreadsheetTitle: 'ChronoCal - Time log'
+      spreadsheetTitle: 'ChronoCal - Time log',
+      summaryTitle: 'Summary',
+      byDate: 'By date',
+      byEvent: 'By event',
+      date: 'Date',
+      sessions: 'Sessions'
     }
   }
 };
@@ -273,6 +337,7 @@ function getDurationTagVariants_() {
   return [
     getDurationTag_('es'),
     getDurationTag_('en'),
+    'Duracion real:',
     CHRONOCAL_CONFIG.descriptionTag
   ].filter(function(value, index, list) {
     return Boolean(value) && list.indexOf(value) === index;
@@ -300,5 +365,35 @@ function getSheetHeaders_(locale) {
     t_('sheet.durationMinutes', null, locale),
     t_('sheet.start', null, locale),
     t_('sheet.end', null, locale)
+  ];
+}
+
+function getStopModeLabel_(mode, locale) {
+  if (mode === 'END_TIME') {
+    return t_('settings.stopModeEndTime', null, locale);
+  }
+  if (mode === 'BOTH') {
+    return t_('settings.stopModeBoth', null, locale);
+  }
+  return t_('settings.stopModeDescription', null, locale);
+}
+
+function getStopModeNotificationKey_(mode) {
+  if (mode === 'END_TIME') {
+    return 'notify.stopModeChangedEndTime';
+  }
+  if (mode === 'BOTH') {
+    return 'notify.stopModeChangedBoth';
+  }
+  return 'notify.stopModeChangedDescription';
+}
+
+function getSummaryHeaders_(locale) {
+  return [
+    t_('sheet.date', null, locale),
+    t_('sheet.event', null, locale),
+    t_('sheet.sessions', null, locale),
+    t_('sheet.duration', null, locale),
+    t_('sheet.durationMinutes', null, locale)
   ];
 }

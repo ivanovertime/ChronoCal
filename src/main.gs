@@ -154,6 +154,7 @@ function onSaveSession(e) {
   var context = getEventContext_(e);
   var sessions = getSessions_();
   var targetSession = getSessionForEvent_(sessions, context);
+  var settings = getSettings_();
   var locale = getCurrentLocale_(e);
 
   if (!targetSession) {
@@ -164,7 +165,7 @@ function onSaveSession(e) {
     }), t_('notify.noSessionToSave', null, locale));
   }
 
-  if (!getSettings_().writeDescription) {
+  if (!settings.writeDescription && settings.stopMode !== 'END_TIME') {
     return buildNotificationResponse_(buildBaseCard_({
       eventContext: buildEventContextFromSession_(targetSession),
       sessions: sessions,
@@ -176,7 +177,23 @@ function onSaveSession(e) {
   var durationMs = calculateSessionDurationMs_(targetSession);
 
   try {
-    var updateResult = updateEventDescription_(targetContext, durationMs, locale);
+    var message;
+    if (settings.stopMode === 'END_TIME') {
+      var endTimeResult = updateEventEndTime_(targetContext, durationMs, locale);
+      message = t_('notify.endTimeApplied', {
+        endTime: endTimeResult.endDateTimeLabel
+      }, locale);
+    } else if (settings.stopMode === 'BOTH') {
+      var endTimeBothResult = updateEventEndTime_(targetContext, durationMs, locale);
+      var updateResult = updateEventDescription_(targetContext, durationMs, locale);
+      message = t_('notify.bothApplied', null, locale) + ' (' + endTimeBothResult.endDateTimeLabel + ')';
+    } else {
+      updateResult = updateEventDescription_(targetContext, durationMs, locale);
+      message = t_('notify.eventUpdated', {
+        durationLine: updateResult.durationLine
+      }, locale);
+    }
+
     sessions = removeSessionByEvent_(sessions, targetContext);
     saveSessions_(sessions);
 
@@ -184,9 +201,7 @@ function onSaveSession(e) {
       eventContext: targetContext,
       sessions: sessions,
       locale: locale
-    }), t_('notify.eventUpdated', {
-      durationLine: updateResult.durationLine
-    }, locale));
+    }), message);
   } catch (error) {
     return buildNotificationResponse_(buildBaseCard_({
       eventContext: targetContext,
@@ -250,7 +265,16 @@ function onStopAll(e) {
 function onExportToSheets(e) {
   var sessions = getSessions_();
   var stopped = getStoppedSessions_(sessions);
+  var settings = getSettings_();
   var locale = getCurrentLocale_(e);
+
+  if (!settings.sheetsExportEnabled) {
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: resolveCardEventContext_(e, sessions),
+      sessions: sessions,
+      locale: locale
+    }), t_('notify.exportDisabledConfigure', null, locale));
+  }
 
   if (!stopped.length) {
     return buildNotificationResponse_(buildBaseCard_({
@@ -271,7 +295,7 @@ function onExportToSheets(e) {
       eventContext: resolveCardEventContext_(e, sessions),
       sessions: sessions,
       locale: locale
-    }), t_('notify.exportManySuccess', { count: result.count }, locale));
+    }), result.url ? t_('notify.exportManySuccess', { count: result.count }, locale) + ' ' + result.url : t_('notify.exportManySuccess', { count: result.count }, locale));
   } catch (error) {
     return buildNotificationResponse_(buildBaseCard_({
       eventContext: resolveCardEventContext_(e, sessions),
@@ -285,7 +309,16 @@ function onExportSessionToSheets(e) {
   var context = getEventContext_(e);
   var sessions = getSessions_();
   var targetSession = getSessionForEvent_(sessions, context);
+  var settings = getSettings_();
   var locale = getCurrentLocale_(e);
+
+  if (!settings.sheetsExportEnabled) {
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: context,
+      sessions: sessions,
+      locale: locale
+    }), t_('notify.exportDisabledConfigure', null, locale));
+  }
 
   if (!targetSession) {
     return buildNotificationResponse_(buildBaseCard_({
@@ -304,7 +337,7 @@ function onExportSessionToSheets(e) {
       eventContext: resolveCardEventContext_(e, sessions),
       sessions: sessions,
       locale: locale
-    }), t_('notify.exportOneSuccess', { count: result.count }, locale));
+    }), result.url ? t_('notify.exportOneSuccess', { count: result.count }, locale) + ' ' + result.url : t_('notify.exportOneSuccess', { count: result.count }, locale));
   } catch (error) {
     return buildNotificationResponse_(buildBaseCard_({
       eventContext: buildEventContextFromSession_(targetSession),
@@ -346,6 +379,107 @@ function onToggleLanguage(e) {
   }), nextLocale === 'en'
     ? t_('notify.languageChangedEnglish', null, nextLocale)
     : t_('notify.languageChangedSpanish', null, nextLocale));
+}
+
+function onToggleStopMode(e) {
+  var settings = getSettings_();
+  var locale = resolveLocale_(e, settings);
+  var modes = CHRONOCAL_CONFIG.stopModes || ['DESCRIPTION', 'END_TIME', 'BOTH'];
+  var currentIndex = modes.indexOf(settings.stopMode);
+  settings.stopMode = modes[(currentIndex + 1) % modes.length];
+  saveSettings_(settings);
+
+  var sessions = getSessions_();
+  return buildNotificationResponse_(buildBaseCard_({
+    eventContext: resolveCardEventContext_(e, sessions),
+    sessions: sessions,
+    locale: locale
+  }), t_(getStopModeNotificationKey_(settings.stopMode), null, locale));
+}
+
+function onToggleSheetsExport(e) {
+  var settings = getSettings_();
+  var locale = resolveLocale_(e, settings);
+  settings.sheetsExportEnabled = !settings.sheetsExportEnabled;
+  saveSettings_(settings);
+
+  var sessions = getSessions_();
+  return buildNotificationResponse_(buildBaseCard_({
+    eventContext: resolveCardEventContext_(e, sessions),
+    sessions: sessions,
+    locale: locale
+  }), settings.sheetsExportEnabled
+    ? t_('notify.sheetsExportEnabled', null, locale)
+    : t_('notify.sheetsExportDisabled', null, locale));
+}
+
+function onSaveSettings(e) {
+  var settings = getSettings_();
+  var locale = resolveLocale_(e, settings);
+  var sessions = getSessions_();
+  var targetValue = getFormInputValue_(e, 'sheetsTarget');
+  var parsedId = parseSpreadsheetReference_(targetValue);
+
+  if (targetValue && !parsedId) {
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: resolveCardEventContext_(e, sessions),
+      sessions: sessions,
+      locale: locale
+    }), t_('notify.invalidSpreadsheetReference', null, locale));
+  }
+
+  if (parsedId && parsedId !== settings.sheetsSpreadsheetId) {
+    var candidate = null;
+    try {
+      candidate = SpreadsheetApp.openById(parsedId);
+    } catch (error) {
+      candidate = null;
+    }
+    if (!candidate) {
+      return buildNotificationResponse_(buildBaseCard_({
+        eventContext: resolveCardEventContext_(e, sessions),
+        sessions: sessions,
+        locale: locale
+      }), t_('notify.invalidSpreadsheetReference', null, locale));
+    }
+    settings.sheetsSpreadsheetId = parsedId;
+    settings.sheetsSpreadsheetUrl = candidate.getUrl();
+  }
+
+  var sheetName = getFormInputValue_(e, 'sheetName') || CHRONOCAL_CONFIG.defaultSheetName;
+  settings.sheetsSheetName = sheetName;
+  saveSettings_(settings);
+
+  return buildNotificationResponse_(buildBaseCard_({
+    eventContext: resolveCardEventContext_(e, sessions),
+    sessions: sessions,
+    locale: locale
+  }), t_('notify.settingsSaved', null, locale));
+}
+
+function onCreateSpreadsheet(e) {
+  var settings = getSettings_();
+  var locale = resolveLocale_(e, settings);
+
+  try {
+    var spreadsheet = createExportSpreadsheet_(settings, locale);
+    settings.sheetsExportEnabled = true;
+    saveSettings_(settings);
+
+    var sessions = getSessions_();
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: resolveCardEventContext_(e, sessions),
+      sessions: sessions,
+      locale: locale
+    }), t_('notify.createSpreadsheetSuccess', { url: spreadsheet.getUrl() }, locale));
+  } catch (error) {
+    var sessionsForError = getSessions_();
+    return buildNotificationResponse_(buildBaseCard_({
+      eventContext: resolveCardEventContext_(e, sessionsForError),
+      sessions: sessionsForError,
+      locale: locale
+    }), (error && error.message ? error.message : t_('notify.exportFailed', null, locale)));
+  }
 }
 
 function refreshCard_(e, message) {

@@ -108,6 +108,8 @@ function saveSessions_(sessions) {
       return Boolean(session);
     });
 
+  normalized = capSessions_(normalized);
+
   setStoredJson_(CHRONOCAL_CONFIG.sessionsPropertyKey, normalized);
 
   // Keep legacy key in sync for compatibility with old cards/functions.
@@ -118,34 +120,37 @@ function saveSessions_(sessions) {
   }
 }
 
+function capSessions_(sessions, maxSessions) {
+  var list = sessions || [];
+  if (maxSessions === undefined || maxSessions === null) {
+    maxSessions = Number(CHRONOCAL_CONFIG.maxSessions) || 25;
+  }
+  if (list.length <= maxSessions) {
+    return list;
+  }
+
+  // Keep running/paused sessions (user intent), then fill remaining slots with
+  // the most recently stopped sessions. Old stopped sessions are evicted first.
+  var active = list.filter(function(session) {
+    return session.status === 'RUNNING' || session.status === 'PAUSED';
+  });
+
+  var stopped = list
+    .filter(function(session) {
+      return session.status === 'STOPPED';
+    })
+    .sort(function(a, b) {
+      var timeA = a.stopped_at_iso || a.started_at_iso || '';
+      var timeB = b.stopped_at_iso || b.started_at_iso || '';
+      return timeA < timeB ? 1 : timeA > timeB ? -1 : 0;
+    });
+
+  return active.concat(stopped).slice(0, maxSessions);
+}
+
 function clearSessions_() {
   deleteStoredValue_(CHRONOCAL_CONFIG.sessionsPropertyKey);
   deleteStoredValue_(CHRONOCAL_CONFIG.sessionPropertyKey);
-}
-
-function getActiveSession_() {
-  var sessions = getSessions_();
-  return getRunningSession_(sessions) || (sessions.length ? sessions[0] : null);
-}
-
-function saveActiveSession_(session) {
-  saveSessions_([session]);
-}
-
-function clearActiveSession_() {
-  clearSessions_();
-}
-
-function getLastResult_() {
-  return getStoredJson_(CHRONOCAL_CONFIG.lastResultPropertyKey);
-}
-
-function saveLastResult_(result) {
-  setStoredJson_(CHRONOCAL_CONFIG.lastResultPropertyKey, result);
-}
-
-function clearLastResult_() {
-  deleteStoredValue_(CHRONOCAL_CONFIG.lastResultPropertyKey);
 }
 
 function getSettings_() {
@@ -173,6 +178,14 @@ function formatDateForUser_(dateValue, timeZone, locale) {
   return Utilities.formatDate(dateValue, timeZone || Session.getScriptTimeZone(), getDateFormatPatternForLocale_(locale));
 }
 
+function formatTimeForUser_(dateValue, timeZone) {
+  return Utilities.formatDate(dateValue, timeZone || Session.getScriptTimeZone(), 'HH:mm');
+}
+
+function formatDateKey_(dateValue, timeZone) {
+  return Utilities.formatDate(dateValue, timeZone || Session.getScriptTimeZone(), 'yyyy-MM-dd');
+}
+
 function getEventMetaCache_() {
   return getStoredJson_(CHRONOCAL_CONFIG.eventMetaCachePropertyKey) || {};
 }
@@ -192,7 +205,39 @@ function rememberEventMeta_(context) {
     timeZone: context.timeZone || Session.getScriptTimeZone(),
     updatedAt: new Date().toISOString()
   };
-  saveEventMetaCache_(cache);
+  saveEventMetaCache_(capEventMetaCache_(cache));
+}
+
+function capEventMetaCache_(cache, maxEntries) {
+  if (maxEntries === undefined || maxEntries === null) {
+    maxEntries = Number(CHRONOCAL_CONFIG.maxEventMetaCacheEntries) || 30;
+  }
+  var keys = Object.keys(cache || {});
+  if (keys.length <= maxEntries) {
+    return cache || {};
+  }
+
+  keys.sort(function(a, b) {
+    var timeA = cache[a].updatedAt || '';
+    var timeB = cache[b].updatedAt || '';
+    return timeA < timeB ? -1 : timeA > timeB ? 1 : 0;
+  });
+
+  // Evict the oldest entries (smallest updatedAt), keep the newest maxEntries.
+  var evictCount = keys.length - maxEntries;
+  var evicted = {};
+  for (var i = 0; i < evictCount; i++) {
+    evicted[keys[i]] = true;
+  }
+
+  var trimmed = {};
+  for (var j = 0; j < keys.length; j++) {
+    if (!evicted[keys[j]]) {
+      trimmed[keys[j]] = cache[keys[j]];
+    }
+  }
+
+  return trimmed;
 }
 
 function getCachedEventMeta_(calendarId, eventId) {
@@ -218,6 +263,46 @@ function parseCardParameters_(e) {
   }
 
   return {};
+}
+
+function getFormInputs_(e) {
+  return (e && e.commonEventObject && e.commonEventObject.formInputs) || {};
+}
+
+function getFormInputValue_(e, fieldName) {
+  var formInputs = getFormInputs_(e);
+  var entry = formInputs[fieldName];
+  if (!entry) {
+    return '';
+  }
+
+  if (entry.input && entry.input.value !== undefined && entry.input.value !== null) {
+    return String(entry.input.value);
+  }
+
+  if (entry.value !== undefined && entry.value !== null) {
+    return String(entry.value);
+  }
+
+  return '';
+}
+
+function parseSpreadsheetReference_(value) {
+  var raw = String(value || '').trim();
+  if (!raw) {
+    return null;
+  }
+
+  var urlMatch = raw.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  if (urlMatch) {
+    return urlMatch[1];
+  }
+
+  if (raw.indexOf(' ') !== -1 || raw.indexOf('/') !== -1 || raw.length < 15) {
+    return '';
+  }
+
+  return raw;
 }
 
 function firstNonEmpty_(values, fallback) {
@@ -483,19 +568,6 @@ function getStoppedSessions_(sessions) {
   return (sessions || []).filter(function(session) {
     return session.status === 'STOPPED';
   });
-}
-
-function buildEventContextFromResult_(result) {
-  if (!result) {
-    return null;
-  }
-
-  return {
-    eventId: result.event_id || '',
-    calendarId: result.calendar_id || 'primary',
-    eventTitle: result.event_title || t_('common.untitledEvent', null, CHRONOCAL_CONFIG.defaultLocale),
-    timeZone: result.time_zone || Session.getScriptTimeZone()
-  };
 }
 
 function isUntitledEvent_(title) {

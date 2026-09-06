@@ -2,8 +2,17 @@
 .direnv/**
 .devenv/**
 .envrc
+node_modules/**
+tests/**
+scripts/**
+.github/**
+assets/**
 flake.nix
 flake.lock
 devenv.nix
+package.json
+package-lock.json
 README.md
+CONTRIBUTING.md
+LICENSE
 docs/**

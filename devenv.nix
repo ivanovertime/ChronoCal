@@ -11,6 +11,8 @@
     CHRONOCAL_ROOT = "${toString ./.}";
   };
 
+  scripts.clasp-push.exec = "npx @google/clasp push";
+
   enterShell = ''
     echo "ChronoCal dev shell ready"
     echo "Node: $(node --version)"

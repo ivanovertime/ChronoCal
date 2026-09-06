@@ -40,25 +40,6 @@ function buildEventIdCandidates_(eventId) {
   return uniqueValues_(candidates.concat(withDomain));
 }
 
-function buildIcalUidCandidates_(eventId) {
-  var raw = String(eventId || '');
-  var normalized = raw.charAt(0) === '_' ? raw.substring(1) : raw;
-  var candidates = [raw, normalized];
-  var withDomain = [];
-
-  for (var i = 0; i < candidates.length; i++) {
-    var candidate = candidates[i];
-    if (!candidate) {
-      continue;
-    }
-    if (candidate.indexOf('@') === -1) {
-      withDomain.push(candidate + '@google.com');
-    }
-  }
-
-  return uniqueValues_(candidates.concat(withDomain));
-}
-
 function parseRecurringInstanceKey_(eventId) {
   var raw = String(eventId || '');
   var normalized = raw.charAt(0) === '_' ? raw.substring(1) : raw;
@@ -180,7 +161,7 @@ function tryFindEventByRecurringInstanceKey_(calendarId, eventId, diagnostics) {
 
   var timeMin = new Date(parsed.startMs - (24 * 60 * 60 * 1000)).toISOString();
   var timeMax = new Date(parsed.startMs + (24 * 60 * 60 * 1000)).toISOString();
-  var iCalUidCandidates = buildIcalUidCandidates_(parsed.baseId);
+  var iCalUidCandidates = buildEventIdCandidates_(parsed.baseId);
 
   try {
     var listResult = Calendar.Events.list(calendarId, {
@@ -247,7 +228,7 @@ function tryFindEventByIcalUid_(calendarId, iCalUid, diagnostics) {
     return null;
   }
 
-  var uidCandidates = buildIcalUidCandidates_(iCalUid);
+  var uidCandidates = buildEventIdCandidates_(iCalUid);
   for (var i = 0; i < uidCandidates.length; i++) {
     try {
       var listResult = Calendar.Events.list(calendarId, {
@@ -344,16 +325,6 @@ function resolveCalendarEvent_(context, diagnostics) {
   return null;
 }
 
-function resolveCalendarEventWithDiagnostics_(context) {
-  var diagnostics = [];
-  var resolved = resolveCalendarEvent_(context, diagnostics);
-
-  return {
-    resolved: resolved,
-    diagnostics: diagnostics
-  };
-}
-
 function getCalendarEventResource_(context, locale) {
   var resolved = resolveCalendarEvent_(context);
   if (!resolved || !resolved.event) {
@@ -426,6 +397,47 @@ function updateEventDescription_(context, durationMs, locale) {
     eventTitle: firstNonEmpty_([event.summary, context.eventTitle], t_('common.untitledEvent', null, activeLocale)),
     durationLine: durationLine,
     stoppedAt: stopAt.toISOString()
+  };
+}
+
+function updateEventEndTime_(context, durationMs, locale) {
+  var activeLocale = getSupportedLocale_(locale) || CHRONOCAL_CONFIG.defaultLocale;
+  var resolved = getCalendarEventResource_(context, activeLocale);
+  var event = resolved.event;
+  var targetCalendarId = resolved.calendarId;
+  var targetEventId = event.id;
+
+  var startDateTime = event.start && event.start.dateTime;
+  if (!startDateTime) {
+    throw new Error(t_('notify.endTimeNotApplicableAllDay', null, activeLocale));
+  }
+
+  var startMs = Date.parse(startDateTime);
+  if (isNaN(startMs)) {
+    throw new Error(t_('calendar.eventNotFound', null, activeLocale));
+  }
+
+  var effectiveTimeZone = firstNonEmpty_([
+    event.start && event.start.timeZone,
+    event.end && event.end.timeZone,
+    context.timeZone
+  ], Session.getScriptTimeZone());
+
+  var newEndMs = startMs + Math.max(0, Number(durationMs || 0));
+  var newEnd = new Date(newEndMs);
+
+  Calendar.Events.patch({
+    end: {
+      dateTime: newEnd.toISOString(),
+      timeZone: effectiveTimeZone
+    }
+  }, targetCalendarId, targetEventId);
+
+  return {
+    eventTitle: firstNonEmpty_([event.summary, context.eventTitle], t_('common.untitledEvent', null, activeLocale)),
+    newEndMs: newEndMs,
+    newEndIso: newEnd.toISOString(),
+    endDateTimeLabel: formatTimeForUser_(newEnd, effectiveTimeZone)
   };
 }
 

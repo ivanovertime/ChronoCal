@@ -10,7 +10,9 @@ No external backend, no third-party storage, and no browser-side timer dependenc
 - Supports paused, running, and stopped sessions.
 - Persists session state using Apps Script UserProperties.
 - Writes tracked duration to event description (toggleable).
+- Adjusts the event end time to match tracked duration (configurable stop mode).
 - Exports stopped sessions to Google Sheets.
+- Builds a summary sheet (per-date and per-event rollups) inside the export spreadsheet.
 - Handles event resolution across calendars and recurring instances.
 
 ## Repository structure
@@ -24,7 +26,9 @@ No external backend, no third-party storage, and no browser-side timer dependenc
 |  |- session.gs
 |  |- calendar.gs
 |  |- sheets.gs
+|  |- i18n.gs
 |  '- config.gs
+|- tests/
 '- docs/
    |- CLASP_SETUP.md
    |- README.md
@@ -63,6 +67,20 @@ For a full deployment workflow, see [docs/CLASP_SETUP.md](docs/CLASP_SETUP.md).
 3. Open an event to load the ChronoCal contextual card.
 4. Start tracking, then pause/resume/stop.
 5. Save to event description or export to Sheets.
+
+## Automated tests
+
+The project ships a Node-based unit test suite for the pure logic (duration math,
+session transitions, i18n, event-ID parsing, export rows). It runs offline with the
+Apps Script globals stubbed and does not require a Google account:
+
+```bash
+npm install
+npm test
+```
+
+The CI workflow runs the same checks (syntax, manifest validation, tests) on every
+push and pull request.
 
 ## Configuration and permissions
 
