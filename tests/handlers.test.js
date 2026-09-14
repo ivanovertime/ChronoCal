@@ -208,3 +208,83 @@ test('onFinishWork() notifies when nothing is active', () => {
   const response = ctx.onFinishWork({ commonEventObject: {} });
   assert.equal(response.__notification.__text, 'There are no active events.');
 });
+
+test('onStartTracking() pauses other running sessions so only one event is active', () => {
+  const { ctx, store, setNow } = loadSource({ now: 10000 });
+  setNow(10000);
+  store.setProperty('CHRONOCAL_SESSIONS', JSON.stringify([
+    {
+      active_event_id: 'evt-1',
+      calendar_id: 'primary',
+      event_title: 'First Meeting',
+      time_zone: 'Etc/UTC',
+      started_at_ms: 5000,
+      elapsed_ms: 0,
+      status: 'RUNNING'
+    }
+  ]));
+  store.setProperty('CHRONOCAL_SETTINGS', JSON.stringify({ userLocale: 'en' }));
+
+  ctx.onStartTracking(eventParams('evt-2'));
+  const sessions = ctx.getSessions_();
+  assert.equal(sessions.length, 2);
+
+  const prev = sessions.find((s) => s.active_event_id === 'evt-1');
+  assert.equal(prev.status, 'PAUSED');
+  assert.equal(prev.elapsed_ms, 5000);
+
+  const next = sessions.find((s) => s.active_event_id === 'evt-2');
+  assert.equal(next.status, 'RUNNING');
+});
+
+test('onResumeTracking() pauses other running sessions before resuming', () => {
+  const { ctx, store, setNow } = loadSource({ now: 10000 });
+  setNow(10000);
+  store.setProperty('CHRONOCAL_SESSIONS', JSON.stringify([
+    {
+      active_event_id: 'evt-1',
+      calendar_id: 'primary',
+      event_title: 'First Meeting',
+      time_zone: 'Etc/UTC',
+      started_at_ms: 5000,
+      elapsed_ms: 0,
+      status: 'RUNNING'
+    },
+    {
+      active_event_id: 'evt-2',
+      calendar_id: 'primary',
+      event_title: 'Second Meeting',
+      time_zone: 'Etc/UTC',
+      started_at_ms: 2000,
+      elapsed_ms: 1000,
+      status: 'PAUSED'
+    }
+  ]));
+  store.setProperty('CHRONOCAL_SETTINGS', JSON.stringify({ userLocale: 'en' }));
+
+  ctx.onResumeTracking(eventParams('evt-2'));
+  const sessions = ctx.getSessions_();
+
+  const prev = sessions.find((s) => s.active_event_id === 'evt-1');
+  assert.equal(prev.status, 'PAUSED');
+  assert.equal(prev.elapsed_ms, 5000);
+
+  const resumed = sessions.find((s) => s.active_event_id === 'evt-2');
+  assert.equal(resumed.status, 'RUNNING');
+});
+
+test('buildSettingsCard_() includes Open spreadsheet button when spreadsheet URL is configured', () => {
+  const { ctx } = loadSource();
+  const card = ctx.buildSettingsCard_({
+    settings: {
+      sheetsSpreadsheetUrl: 'https://docs.google.com/spreadsheets/d/abc/edit',
+      sheetsSpreadsheetId: 'abc',
+      sheetsSheetName: 'ChronoCal',
+      sheetsExportEnabled: true,
+      userLocale: 'en',
+      stopMode: 'DESCRIPTION'
+    },
+    locale: 'en'
+  });
+  assert.equal(card.type, 'built');
+});

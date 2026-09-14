@@ -45,6 +45,9 @@ function onStartTracking(e) {
     }), t_('notify.sessionAlreadyRunning', null, locale));
   }
 
+  // Pause any other running session so only one event tracks at a time.
+  pauseAllSessions_(sessions, nowMs);
+
   if (currentSession && (currentSession.status === 'PAUSED' || currentSession.status === 'STOPPED')) {
     resumeSessionInPlace_(currentSession, nowMs);
     saveSessions_(sessions);
@@ -115,6 +118,9 @@ function onResumeTracking(e) {
       locale: locale
     }), t_('notify.noPausedSessionForEvent', null, locale));
   }
+
+  // Pause any other running session so only one event tracks at a time.
+  pauseAllSessions_(sessions, nowMs);
 
   resumeSessionInPlace_(targetSession, nowMs);
   saveSessions_(sessions);

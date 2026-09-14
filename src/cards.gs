@@ -35,6 +35,14 @@ function buildStatusSection_(eventContext, sessions, locale) {
     }
   } else if (state === 'PAUSED') {
     text = t_('status.onBreak', null, locale) + ' · ' + totalLabel;
+    var pausedList = (sessions || []).filter(function(s) {
+      return s.status === 'PAUSED';
+    });
+    if (pausedList.length === 1 && pausedList[0].event_title) {
+      bottom = pausedList[0].event_title;
+    } else if (pausedList.length > 1) {
+      bottom = t_('notify.pausedCount', { count: pausedList.length }, locale);
+    }
   } else if (state === 'STOPPED') {
     text = t_('status.dayFinished', null, locale) + ' · ' + totalLabel;
   } else {
@@ -143,10 +151,20 @@ function buildEntrySection_(entry, settings, locale) {
 function buildEntryActions_(status, context, settings, locale) {
   var buttons = CardService.newButtonSet();
 
-  if (status === 'STOPPED') {
-    buttons.addButton(createButton_(buildStopModeApplyLabel_(settings, locale), 'onSaveSession', context));
+  if (status === 'RUNNING') {
+    buttons.addButton(createButton_(t_('action.pause', null, locale), 'onPauseTracking', context));
+    buttons.addButton(createButton_(t_('action.stop', null, locale), 'onStopTracking', context));
+  } else if (status === 'PAUSED') {
+    buttons.addButton(createButton_(t_('action.resume', null, locale), 'onResumeTracking', context));
+    buttons.addButton(createButton_(t_('action.stop', null, locale), 'onStopTracking', context));
     buttons.addButton(createButton_(t_('action.discard', null, locale), 'onDiscardSession', context));
-  } else if (status !== 'RUNNING' && status !== 'PAUSED') {
+  } else if (status === 'STOPPED') {
+    buttons.addButton(createButton_(buildStopModeApplyLabel_(settings, locale), 'onSaveSession', context));
+    if (settings.sheetsExportEnabled) {
+      buttons.addButton(createButton_(t_('action.export', null, locale), 'onExportSessionToSheets', context));
+    }
+    buttons.addButton(createButton_(t_('action.discard', null, locale), 'onDiscardSession', context));
+  } else {
     buttons.addButton(createButton_(t_('action.start', null, locale), 'onStartTracking', context));
   }
 
@@ -241,6 +259,11 @@ function buildExportSettingsSection_(settings, locale) {
   buttonSet.addButton(CardService.newTextButton()
     .setText(t_('settings.createSpreadsheet', null, locale))
     .setOnClickAction(buildGlobalAction_('onCreateSpreadsheet')));
+  if (settings.sheetsSpreadsheetUrl) {
+    buttonSet.addButton(CardService.newTextButton()
+      .setText(t_('settings.openSpreadsheet', null, locale))
+      .setOpenLink(CardService.newOpenLink().setUrl(settings.sheetsSpreadsheetUrl).setOpenAs(CardService.OpenAs.FULL_SIZE)));
+  }
   section.addWidget(buttonSet);
 
   return section;

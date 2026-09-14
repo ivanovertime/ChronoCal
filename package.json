@@ -5,7 +5,11 @@
   "description": "ChronoCal - local time tracker for Google Calendar (Apps Script add-on)",
   "scripts": {
     "test": "node --test",
-    "lint": "node scripts/check-syntax.js"
+    "lint": "node scripts/check-syntax.js",
+    "push": "npx @google/clasp push",
+    "status": "npx @google/clasp status",
+    "open": "npx @google/clasp open",
+    "deployments": "npx @google/clasp deployments"
   },
   "engines": {
     "node": ">=18"

@@ -93,7 +93,7 @@ function chainable() {
       };
         };
       }
-      if (prop === '__notification' || prop === '__text' || prop === '__params' || prop === '__nav' || prop === '__cards') {
+      if (prop === '__notification' || prop === '__text' || prop === '__params' || prop === '__nav' || prop === '__cards' || prop === '__buttons' || prop === '__functionName' || prop === '__onClickAction' || prop === '__openLink') {
         return raw[prop];
       }
       if (typeof prop !== 'string') {
@@ -118,6 +118,19 @@ function chainable() {
         }
         if (prop === 'setNavigation') {
           raw.__navigation = args[0];
+        }
+        if (prop === 'addButton') {
+          raw.__buttons = raw.__buttons || [];
+          raw.__buttons.push(args[0]);
+        }
+        if (prop === 'setFunctionName') {
+          raw.__functionName = args[0];
+        }
+        if (prop === 'setOnClickAction') {
+          raw.__onClickAction = args[0];
+        }
+        if (prop === 'setOpenLink') {
+          raw.__openLink = args[0];
         }
         return proxy;
       };
