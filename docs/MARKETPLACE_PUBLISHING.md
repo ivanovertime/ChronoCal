@@ -31,10 +31,10 @@ In [GCP Console > APIs & Services > OAuth consent screen](https://console.cloud.
 - **App name**: `ChronoCal - Time Tracker for Google Calendar`
 - **User support email**: Your support or maintainer email.
 - **App logo**: Upload [assets/icon-128.png](../assets/icon-128.png) (128x128 PNG).
-- **Application home page**: `https://ivanovertime.github.io/ChronoCal` (or repository URL).
-- **Application privacy policy link**: `https://ivanovertime.github.io/ChronoCal/docs/PRIVACY.html` (or raw GitHub markdown link).
-- **Application terms of service link**: `https://ivanovertime.github.io/ChronoCal/docs/TERMS.html`.
-- **Authorized domains**: `github.io` (or your verified domain).
+- **Application home page**: `https://github.com/ivanovertime/ChronoCal`
+- **Application privacy policy link**: `https://github.com/ivanovertime/ChronoCal/blob/trunk/docs/PRIVACY.md`
+- **Application terms of service link**: `https://github.com/ivanovertime/ChronoCal/blob/trunk/docs/TERMS.md`
+- **Authorized domains**: `github.com`
 - **Developer contact information**: Your developer email.
 
 ---
