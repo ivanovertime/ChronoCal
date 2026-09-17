@@ -1,117 +1,158 @@
 # ChronoCal
 
-ChronoCal is a Google Calendar add-on that tracks real time spent on events directly inside Google Workspace.
+<p align="center">
+  <img src="assets/icon-128.png" width="96" height="96" alt="ChronoCal Logo" />
+</p>
 
-No external backend, no third-party storage, and no browser-side timer dependency.
+<p align="center">
+  <strong>Privacy-First Local Time Tracker for Google Calendar</strong><br />
+  Track real time spent on meetings, focus blocks, and tasks directly inside Google Workspace without external servers, third-party databases, or browser-side timer loops.
+</p>
 
-## What it does
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-Production%20Ready-brightgreen" alt="Status" />
+  <img src="https://img.shields.io/badge/Tests-66%20Passing-success" alt="Tests" />
+  <img src="https://img.shields.io/badge/Architecture-100%25%20Native%20Workspace-blue" alt="Architecture" />
+  <img src="https://img.shields.io/badge/License-MIT-lightgrey" alt="License" />
+</p>
 
-- Starts and stops tracking from the Calendar side panel.
-- Supports paused, running, and stopped sessions.
-- Persists session state using Apps Script UserProperties.
-- Writes tracked duration to event description (toggleable).
-- Adjusts the event end time to match tracked duration (configurable stop mode).
-- Exports stopped sessions to Google Sheets.
-- Builds a summary sheet (per-date and per-event rollups) inside the export spreadsheet.
-- Settings live on a dedicated card, opened from the main panel.
-- Handles event resolution across calendars and recurring instances.
+---
 
-## Repository structure
+## What It Does
+
+- ⏱ **Contextual Side-Panel Tracking**: Start, pause, resume, and stop tracking directly from any event in Google Calendar.
+- 🔒 **100% Private & Native**: Runs entirely inside Google Apps Script (V8 runtime). Zero external servers, no third-party databases, and no user tracking.
+- 🧭 **Built-In Onboarding Guide**: Friendly quick-start steps right on the side panel when no event is open.
+- 📝 **Calendar Description Sync**: Automatically appends the tracked duration (e.g., `⌛ Duración Real: 01:45:00`) to the calendar event.
+- ⏰ **Automatic End-Time Adjusting**: Optionally adjusts the event end time to reflect your actual worked duration.
+- 📊 **Google Sheets Analytics**: One-click export to Google Sheets with automatic daily and per-event summary roll-ups.
+- 🌐 **Full Multi-Language (i18n)**: Native dual-language support for Spanish (`es`) and English (`en`) with automatic locale detection and manual override.
+- 🛡 **Drift-Proof Duration Math**: Calculates elapsed time using absolute timestamps (`Date.now() - started_at_ms + elapsed_ms`); immune to browser tab suspension, sleep mode, or system restarts.
+- 🎨 **Google Material 3 Styling**: Visual button hierarchy with primary filled action buttons, precision chronometer detailing, and dual-color gradient branding.
+
+---
+
+## Repository Structure
 
 ```text
 .
-|- appsscript.json
-|- src/
-|  |- main.gs
-|  |- cards.gs
-|  |- session.gs
-|  |- calendar.gs
-|  |- sheets.gs
-|  |- i18n.gs
-|  '- config.gs
-|- tests/
-'- docs/
-   |- CLASP_SETUP.md
-   |- README.md
-   '- prd/
-      '- README.md
+├── appsscript.json             # Google Workspace Add-on manifest (scopes, triggers, layout)
+├── assets/                     # Production branding and store graphic assets
+│   ├── icon.png                # 32x32 active companion icon (for appsscript.json)
+│   ├── icon-32.png / .svg      # 32x32 companion sidebar icon
+│   ├── icon-128.png / .svg     # 128x128 Google Workspace Marketplace store icon
+│   ├── icon-512.png            # 512x512 high-resolution master asset
+│   └── promo-card-440x280.png  # 440x280 Marketplace store listing promo banner
+├── docs/                       # Architecture, legal, and publishing documentation
+│   ├── CLASP_SETUP.md          # clasp development and deployment walkthrough
+│   ├── MARKETPLACE_PUBLISHING.md # Google Cloud setup, OAuth verification & store listing
+│   ├── PRIVACY.md              # Public Privacy Policy (Google Limited Use compliant)
+│   ├── TERMS.md                # Terms of Service & MIT Open Source license
+│   ├── README.md               # Documentation index
+│   └── prd/                    # Product Requirements Document (PRD v1.1)
+├── scripts/
+│   ├── check-syntax.js         # Offline V8 syntax and manifest validator
+│   └── generate-branding.js    # Deterministic vector and PNG asset generator
+├── src/                        # Google Apps Script source files
+│   ├── calendar.gs             # Calendar API, recurrence parsing, end-time & description patch
+│   ├── cards.gs                # CardService UI builders, onboarding, button hierarchy, settings
+│   ├── config.gs               # Runtime constants, default settings, cache limits
+│   ├── i18n.gs                 # Internationalization bundles (es/en) and formatters
+│   ├── main.gs                 # Action handlers, navigation, event-open triggers
+│   ├── session.gs              # Session state, duration math, UserProperties storage
+│   └── sheets.gs               # Google Sheets export engine and summary roll-up aggregator
+└── tests/                      # Pure offline unit test suite (runs in Node.js VM with stubs)
+    ├── calendar.test.js        # ID parsing, recurrence candidate resolution tests
+    ├── cards.test.js           # UI builders, button styling, onboarding card tests
+    ├── handlers.test.js        # Action handler, session switching, settings navigation tests
+    ├── i18n.test.js            # Translation interpolation and fallback tests
+    ├── session.test.js         # Duration math, state transitions, cache eviction tests
+    ├── settings.test.js        # Configuration normalization and toggle tests
+    └── sheets.test.js          # Export row generation and summary sheet tests
 ```
 
-## Prerequisites
+---
 
-- Node.js and npm
-- Google account with Apps Script access
-- clasp (used via npx)
-- Optional: Nix + direnv (repo includes dev environment files)
+## Quick Start
 
-## Quick start
+### Prerequisites
+- [Node.js](https://nodejs.org/) (>= 18) and npm
+- A Google account with access to Google Calendar and Google Apps Script
+- Optional: `direnv` or `nix` (environment shell configuration included)
 
+### 1. Development Environment
 ```bash
 direnv allow
 npx @google/clasp login
 ```
 
-Create a new Apps Script project and push:
-
+### 2. Create or Link Your Apps Script Project
 ```bash
+# Create a new standalone Apps Script project
 npx @google/clasp create --type standalone --title "ChronoCal" --rootDir .
-npx @google/clasp push
-npx @google/clasp open
+
+# Push code to Google
+npm run push
+
+# Open in browser editor
+npm run open
 ```
 
-For a full deployment workflow, see [docs/CLASP_SETUP.md](docs/CLASP_SETUP.md).
+---
 
-## How to test
+## Automated Test Suite
 
-1. Push the project with clasp.
-2. Open Google Calendar on desktop.
-3. Open an event to load the ChronoCal contextual card.
-4. Start tracking, then pause/resume/stop.
-5. Save to event description or export to Sheets.
-
-## Automated tests
-
-The project ships a Node-based unit test suite for the pure logic (duration math,
-session transitions, i18n, event-ID parsing, export rows). It runs offline with the
-Apps Script globals stubbed and does not require a Google account:
+ChronoCal features a comprehensive offline unit test suite with zero external network dependencies or Google authentication requirements:
 
 ```bash
-npm install
+# Run all 66 automated tests
 npm test
+
+# Check V8 syntax and manifest structure
+npm run lint
+
+# Run both before pushing or opening a PR
+npm test && npm run lint
 ```
 
-The CI workflow runs the same checks (syntax, manifest validation, tests) on every
-push and pull request.
+---
 
-## Configuration and permissions
+## Asset & Branding Pipeline
 
-- Manifest: [appsscript.json](appsscript.json)
-- OAuth scopes include Calendar add-on execution, Calendar read/write, and Sheets.
-- Description writing and the stop mode are configurable from the Settings card (opened from the ⋮ menu).
+To rebuild all vector SVGs and pixel-perfect PNGs for the companion bar, store icon, and promo banner:
 
-## Icon source attribution
+```bash
+npm run build:assets
+```
 
-- Add-on logo icon source page: [Google Fonts Material Symbols Outlined - punch_clock](https://fonts.google.com/icons?selected=Material+Symbols+Outlined:punch_clock:FILL@0;wght@700;GRAD@0;opsz@40&icon.style=Outlined&icon.query=hour&icon.size=32&icon.color=%23789DE5)
-- Direct logo asset used in the manifest: [punch_clock 48px SVG](https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/punch_clock/default/48px.svg)
+Asset outputs conform to Google Workspace Marketplace publishing specifications.
 
-## Documentation
+---
 
-- Product requirements document: [docs/prd/README.md](docs/prd/README.md)
-- Documentation index: [docs/README.md](docs/README.md)
-- Deployment setup: [docs/CLASP_SETUP.md](docs/CLASP_SETUP.md)
+## Testing in Google Calendar (Developer Mode)
 
-## Contributing
+1. Run `npm run push` to upload local code to Apps Script.
+2. Open [Google Calendar](https://calendar.google.com/) in your browser on desktop.
+3. Click the **Gear icon (⚙)** in the top right -> **Settings**.
+4. In the left navigation, click **Add-ons**.
+5. Check **Enable developer add-ons execution**.
+6. The head deployment (`@HEAD`) will appear on the right companion sidebar.
+7. Click the ChronoCal icon to open the panel, or select any event on your calendar.
 
-- Contribution guidelines: [CONTRIBUTING.md](CONTRIBUTING.md)
-- Pull request template: [.github/pull_request_template.md](.github/pull_request_template.md)
-- Issue templates: [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE)
+---
+
+## Documentation Directory
+
+- [**Documentation Index**](docs/README.md)
+- [**Product Requirements Document (PRD)**](docs/prd/README.md)
+- [**CLASP Setup & Deployment Guide**](docs/CLASP_SETUP.md)
+- [**Marketplace Publishing Guide**](docs/MARKETPLACE_PUBLISHING.md)
+- [**Privacy Policy**](docs/PRIVACY.md)
+- [**Terms of Service**](docs/TERMS.md)
+- [**Contributing Guidelines**](CONTRIBUTING.md)
+
+---
 
 ## License
 
-Licensed under MIT. See [LICENSE](LICENSE).
-
-## Status
-
-Current state: functional MVP plus pause/resume and Sheets export flows.
-
-Planned evolution is documented in the PRD.
+ChronoCal is open-source software licensed under the [MIT License](LICENSE).

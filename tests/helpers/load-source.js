@@ -89,11 +89,13 @@ function chainable() {
         __text: raw.__text,
         __params: raw.__params,
         __nav: collectNav(),
-        __cards: raw.__cards
+        __cards: raw.__cards,
+        __sections: raw.__sections,
+        __header: raw.__header
       };
         };
       }
-      if (prop === '__notification' || prop === '__text' || prop === '__params' || prop === '__nav' || prop === '__cards' || prop === '__buttons' || prop === '__functionName' || prop === '__onClickAction' || prop === '__openLink') {
+      if (prop === '__notification' || prop === '__text' || prop === '__params' || prop === '__nav' || prop === '__cards' || prop === '__buttons' || prop === '__functionName' || prop === '__onClickAction' || prop === '__openLink' || prop === '__buttonStyle' || prop === '__sections' || prop === '__widgets' || prop === '__header' || prop === '__icon' || prop === '__primaryButton' || prop === '__secondaryButton') {
         return raw[prop];
       }
       if (typeof prop !== 'string') {
@@ -132,6 +134,29 @@ function chainable() {
         if (prop === 'setOpenLink') {
           raw.__openLink = args[0];
         }
+        if (prop === 'setPrimaryButton') {
+          raw.__primaryButton = args[0];
+        }
+        if (prop === 'setSecondaryButton') {
+          raw.__secondaryButton = args[0];
+        }
+        if (prop === 'setTextButtonStyle') {
+          raw.__buttonStyle = args[0];
+        }
+        if (prop === 'addSection') {
+          raw.__sections = raw.__sections || [];
+          raw.__sections.push(args[0]);
+        }
+        if (prop === 'addWidget') {
+          raw.__widgets = raw.__widgets || [];
+          raw.__widgets.push(args[0]);
+        }
+        if (prop === 'setHeader') {
+          raw.__header = args[0];
+        }
+        if (prop === 'setIcon') {
+          raw.__icon = args[0];
+        }
         return proxy;
       };
     }
@@ -168,7 +193,15 @@ function makeCardServiceStub() {
 
   CardService.Icon = {
     CLOCK: 'CLOCK',
-    VIDEO_PLAY: 'VIDEO_PLAY'
+    VIDEO_PLAY: 'VIDEO_PLAY',
+    DESCRIPTION: 'DESCRIPTION',
+    STAR: 'STAR',
+    BOOKMARK: 'BOOKMARK',
+    INVITE: 'INVITE'
+  };
+  CardService.TextButtonStyle = {
+    TEXT: 'TEXT',
+    FILLED: 'FILLED'
   };
   CardService.SelectionInputType = {
     DROP_DOWN: 'DROP_DOWN'

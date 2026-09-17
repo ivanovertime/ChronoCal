@@ -1,52 +1,74 @@
 # Contributing to ChronoCal
 
-Thanks for your interest in improving ChronoCal.
+Thank you for your interest in improving ChronoCal! ChronoCal is a community-driven, privacy-first open-source Google Workspace Add-on.
 
-## Development setup
+---
 
-1. Enter the repository.
-2. Load the local environment.
-3. Authenticate with clasp.
+## 1. Development Setup
 
-```bash
-cd /home/ivan/Source/ChronoCal
-direnv allow
-npx @google/clasp login
-```
+1. Clone the repository and enter the directory:
+   ```bash
+   git clone https://github.com/ivanovertime/ChronoCal.git
+   cd ChronoCal
+   ```
+2. Allow `direnv` or enter your Nix dev shell:
+   ```bash
+   direnv allow
+   ```
+3. Authenticate with Google Apps Script:
+   ```bash
+   npx @google/clasp login
+   ```
 
-## Typical workflow
+---
 
-1. Create a branch from trunk.
-2. Keep changes focused and small.
-3. Update docs when behavior or setup changes.
-4. Push with clear commit messages.
-5. Open a pull request with context and test notes.
+## 2. Typical Workflow
 
-## Code style
+1. Create a feature branch from `trunk`:
+   ```bash
+   git checkout -b feature/my-enhancement
+   ```
+2. Keep changes focused, well-documented, and small.
+3. If changing UI or i18n text, update both Spanish (`es`) and English (`en`) bundles in `src/i18n.gs`.
+4. Add automated test coverage in `tests/` for any new logic or action handlers.
+5. If modifying branding assets or SVGs, run:
+   ```bash
+   npm run build:assets
+   ```
+6. Verify your changes pass all tests and lint checks:
+   ```bash
+   npm test && npm run lint
+   ```
+7. Open a Pull Request with a clear description and screenshots where applicable.
 
-- Use clear function names and small helper functions.
-- Keep behavior changes backward compatible when practical.
-- Avoid unrelated refactors in feature or bugfix PRs.
+---
 
-## Testing checklist
+## 3. Testing Checklist
 
-Before opening a PR, verify:
+Before opening or merging a Pull Request, verify:
 
-- Add-on card loads in Google Calendar event context.
-- Start, pause/resume, stop flow works.
-- Save-to-description works when enabled.
-- Sheets export works and creates rows as expected.
-- Error paths keep sessions when save/export fails.
+- [ ] `npm test` passes all 66 offline unit tests.
+- [ ] `npm run lint` confirms clean syntax for all `src/*.gs` files and JSON manifests.
+- [ ] Add-on loads in Google Calendar developer mode without execution errors.
+- [ ] Primary buttons render with filled styling; secondary actions render as clean text buttons.
+- [ ] Start, Pause, Resume, Stop, and Discard flows work smoothly.
+- [ ] Description modification and End-Time adjustment update calendar events accurately without duplicate tags.
+- [ ] Sheets export properly formats rows and updates the summary sheet.
+- [ ] Onboarding section renders correctly when opening the side panel without an active event.
 
-## Pull request checklist
+---
 
-- Describe what changed and why.
-- Add steps to reproduce or validate.
-- Include screenshots for card UI changes when applicable.
-- Link related issues.
+## 4. Code Style & Architecture Guidelines
 
-## Security
+- **Declarative UI**: Google Workspace uses `CardService`. There is no DOM or live interval timers. UI updates only occur on user interaction or manual refresh.
+- **Button Limits**: A `CardService.ButtonSet` supports a maximum of **3 buttons**. Do not add a 4th button to any set.
+- **Drift-Proof Math**: Always calculate durations dynamically using absolute timestamps (`Date.now() - started_at_ms + elapsed_ms`).
+- **Single Active Session**: Only one timer may run at a time to prevent accidental background runaways.
 
-Do not commit secrets, personal tokens, or private IDs.
+---
 
-If you find a sensitive issue, report it privately to project maintainers instead of opening a public issue.
+## 5. Security & Privacy Disclosures
+
+- Never commit secrets, OAuth tokens, personal calendar IDs, or private URLs.
+- ChronoCal strictly adheres to a zero-external-servers policy. PRs adding external network calls (`UrlFetchApp`) to third-party endpoints will not be accepted.
+- If you discover a security vulnerability, please report it privately to the maintainers rather than creating a public issue.

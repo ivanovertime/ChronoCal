@@ -10,10 +10,26 @@ var CHRONOCAL_I18N = {
       openSuffix: 'abierto',
       timeLabel: 'Tiempo',
       today: 'hoy',
-      refresh: 'Actualizar'
+      refresh: 'Actualizar',
+      activeHint: 'actualiza al interactuar',
+      sincePrefix: 'desde'
+    },
+    onboarding: {
+      title: 'Cómo usar ChronoCal',
+      step1Title: '1. Selecciona un evento',
+      step1Body: 'Haz clic en cualquier evento o tarea en Google Calendar para abrirlo.',
+      step2Title: '2. Registra tu tiempo real',
+      step2Body: 'Pulsa Iniciar para comenzar a medir. Puedes pausar o cambiar de tarea cuando quieras.',
+      step3Title: '3. Guarda o exporta',
+      step3Body: 'Guarda la duración real en la descripción del evento o expórtala a Google Sheets.',
+      privacyBadge: '🔒 Privacidad total: 100% nativo en Google Workspace. Sin servidores externos.'
     },
     settings: {
       title: 'Configuración',
+      aboutSection: 'Acerca de ChronoCal',
+      versionLabel: 'Versión',
+      privacyNotice: '100% nativo · Tus datos nunca salen de Google',
+      helpAndDocs: 'Documentación y soporte',
       stopModeLabel: 'Al detener',
       stopModeCurrent: 'Modo actual',
       stopModeDescription: 'Descripción',
@@ -144,10 +160,26 @@ var CHRONOCAL_I18N = {
       openSuffix: 'open',
       timeLabel: 'Time',
       today: 'today',
-      refresh: 'Refresh'
+      refresh: 'Refresh',
+      activeHint: 'updates on click',
+      sincePrefix: 'since'
+    },
+    onboarding: {
+      title: 'How ChronoCal works',
+      step1Title: '1. Select an event',
+      step1Body: 'Click any event or task on your Google Calendar.',
+      step2Title: '2. Track your focus time',
+      step2Body: 'Press Start to begin tracking. Pause or switch tasks whenever you need.',
+      step3Title: '3. Save or export',
+      step3Body: 'Sync actual duration back to your event or export to Google Sheets.',
+      privacyBadge: '🔒 Total privacy: 100% native to Google Workspace with zero external servers.'
     },
     settings: {
       title: 'Settings',
+      aboutSection: 'About ChronoCal',
+      versionLabel: 'Version',
+      privacyNotice: '100% native · Your data never leaves Google',
+      helpAndDocs: 'Documentation & Support',
       stopModeLabel: 'On stop',
       stopModeCurrent: 'Current mode',
       stopModeDescription: 'Description',

@@ -6,6 +6,7 @@
   "scripts": {
     "test": "node --test",
     "lint": "node scripts/check-syntax.js",
+    "build:assets": "node scripts/generate-branding.js",
     "push": "npx @google/clasp push",
     "status": "npx @google/clasp status",
     "open": "npx @google/clasp open",

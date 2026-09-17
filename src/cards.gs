@@ -13,11 +13,52 @@ function buildBaseCard_(options) {
     cardBuilder.setFixedFooter(footer);
   }
 
-  for (var i = 0; i < entries.length; i++) {
-    cardBuilder.addSection(buildEntrySection_(entries[i], settings, locale));
+  if (entries.length === 0) {
+    cardBuilder.addSection(buildOnboardingSection_(locale));
+  } else {
+    for (var i = 0; i < entries.length; i++) {
+      cardBuilder.addSection(buildEntrySection_(entries[i], settings, locale));
+    }
   }
 
   return cardBuilder.build();
+}
+
+function buildOnboardingSection_(locale) {
+  var section = CardService.newCardSection()
+    .setHeader(t_('onboarding.title', null, locale));
+
+  section.addWidget(
+    CardService.newDecoratedText()
+      .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.CLOCK))
+      .setTopLabel(t_('onboarding.step1Title', null, locale))
+      .setText(t_('onboarding.step1Body', null, locale))
+      .setWrapText(true)
+  );
+
+  section.addWidget(
+    CardService.newDecoratedText()
+      .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.VIDEO_PLAY))
+      .setTopLabel(t_('onboarding.step2Title', null, locale))
+      .setText(t_('onboarding.step2Body', null, locale))
+      .setWrapText(true)
+  );
+
+  section.addWidget(
+    CardService.newDecoratedText()
+      .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.DESCRIPTION || CardService.Icon.CLOCK))
+      .setTopLabel(t_('onboarding.step3Title', null, locale))
+      .setText(t_('onboarding.step3Body', null, locale))
+      .setWrapText(true)
+  );
+
+  section.addWidget(
+    CardService.newDecoratedText()
+      .setText(t_('onboarding.privacyBadge', null, locale))
+      .setWrapText(true)
+  );
+
+  return section;
 }
 
 function buildStatusSection_(eventContext, sessions, locale) {
@@ -134,12 +175,19 @@ function buildEntrySection_(entry, settings, locale) {
     ? context.eventTitle
     : (entry.isOpen ? t_('card.currentEvent', null, locale) : t_('common.untitledEvent', null, locale));
 
+  var durationText = session ? formatDuration_(calculateSessionDurationMs_(session)) : '00:00:00';
+  var bottomLabel = t_('card.timeLabel', null, locale) + ': ' + durationText;
+  if (status === 'RUNNING' && session && session.started_at_ms) {
+    var timeStr = formatTimeForUser_(new Date(session.started_at_ms), context.timeZone || 'Etc/UTC');
+    bottomLabel += ' (' + t_('card.sincePrefix', null, locale) + ' ' + timeStr + ') · ' + t_('card.activeHint', null, locale);
+  }
+
   section.addWidget(
     CardService.newDecoratedText()
       .setStartIcon(CardService.newIconImage().setIcon(statusIcon_(status)))
       .setTopLabel(statusLabel_(status, locale) + (entry.isOpen ? (' · ' + t_('card.openSuffix', null, locale)) : ''))
       .setText(title)
-      .setBottomLabel(t_('card.timeLabel', null, locale) + ': ' + (session ? formatDuration_(calculateSessionDurationMs_(session)) : '00:00:00'))
+      .setBottomLabel(bottomLabel)
       .setWrapText(true)
   );
 
@@ -152,20 +200,20 @@ function buildEntryActions_(status, context, settings, locale) {
   var buttons = CardService.newButtonSet();
 
   if (status === 'RUNNING') {
-    buttons.addButton(createButton_(t_('action.pause', null, locale), 'onPauseTracking', context));
-    buttons.addButton(createButton_(t_('action.stop', null, locale), 'onStopTracking', context));
+    buttons.addButton(createButton_(t_('action.pause', null, locale), 'onPauseTracking', context, false));
+    buttons.addButton(createButton_(t_('action.stop', null, locale), 'onStopTracking', context, true));
   } else if (status === 'PAUSED') {
-    buttons.addButton(createButton_(t_('action.resume', null, locale), 'onResumeTracking', context));
-    buttons.addButton(createButton_(t_('action.stop', null, locale), 'onStopTracking', context));
-    buttons.addButton(createButton_(t_('action.discard', null, locale), 'onDiscardSession', context));
+    buttons.addButton(createButton_(t_('action.resume', null, locale), 'onResumeTracking', context, true));
+    buttons.addButton(createButton_(t_('action.stop', null, locale), 'onStopTracking', context, false));
+    buttons.addButton(createButton_(t_('action.discard', null, locale), 'onDiscardSession', context, false));
   } else if (status === 'STOPPED') {
-    buttons.addButton(createButton_(buildStopModeApplyLabel_(settings, locale), 'onSaveSession', context));
+    buttons.addButton(createButton_(buildStopModeApplyLabel_(settings, locale), 'onSaveSession', context, true));
     if (settings.sheetsExportEnabled) {
-      buttons.addButton(createButton_(t_('action.export', null, locale), 'onExportSessionToSheets', context));
+      buttons.addButton(createButton_(t_('action.export', null, locale), 'onExportSessionToSheets', context, false));
     }
-    buttons.addButton(createButton_(t_('action.discard', null, locale), 'onDiscardSession', context));
+    buttons.addButton(createButton_(t_('action.discard', null, locale), 'onDiscardSession', context, false));
   } else {
-    buttons.addButton(createButton_(t_('action.start', null, locale), 'onStartTracking', context));
+    buttons.addButton(createButton_(t_('action.start', null, locale), 'onStartTracking', context, true));
   }
 
   return buttons;
@@ -181,6 +229,7 @@ function buildSettingsCard_(options) {
   cardBuilder.addSection(buildTrackingSettingsSection_(settings, locale));
   cardBuilder.addSection(buildExportSettingsSection_(settings, locale));
   cardBuilder.addSection(buildLanguageSettingsSection_(settings, locale));
+  cardBuilder.addSection(buildAboutSection_(locale));
   cardBuilder.addSection(buildSettingsNavSection_(locale));
 
   return cardBuilder.build();
@@ -253,9 +302,13 @@ function buildExportSettingsSection_(settings, locale) {
   );
 
   var buttonSet = CardService.newButtonSet();
-  buttonSet.addButton(CardService.newTextButton()
+  var saveSettingsBtn = CardService.newTextButton()
     .setText(t_('settings.saveSettings', null, locale))
-    .setOnClickAction(buildGlobalAction_('onSaveSettings')));
+    .setOnClickAction(buildGlobalAction_('onSaveSettings'));
+  if (CardService.TextButtonStyle && CardService.TextButtonStyle.FILLED) {
+    saveSettingsBtn.setTextButtonStyle(CardService.TextButtonStyle.FILLED);
+  }
+  buttonSet.addButton(saveSettingsBtn);
   buttonSet.addButton(CardService.newTextButton()
     .setText(t_('settings.createSpreadsheet', null, locale))
     .setOnClickAction(buildGlobalAction_('onCreateSpreadsheet')));
@@ -280,6 +333,31 @@ function buildLanguageSettingsSection_(settings, locale) {
     .addItem('English', 'en', settings.userLocale === 'en');
 
   section.addWidget(languageInput);
+
+  return section;
+}
+
+function buildAboutSection_(locale) {
+  var section = CardService.newCardSection()
+    .setHeader(t_('settings.aboutSection', null, locale));
+
+  section.addWidget(
+    CardService.newDecoratedText()
+      .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.STAR || CardService.Icon.CLOCK))
+      .setTopLabel(t_('settings.versionLabel', null, locale))
+      .setText('ChronoCal v1.0.0')
+      .setBottomLabel(t_('settings.privacyNotice', null, locale))
+      .setWrapText(true)
+  );
+
+  var docsUrl = 'https://github.com/ivanovertime/ChronoCal';
+  section.addWidget(
+    CardService.newDecoratedText()
+      .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.BOOKMARK || CardService.Icon.CLOCK))
+      .setText(t_('settings.helpAndDocs', null, locale))
+      .setWrapText(true)
+      .setOpenLink(CardService.newOpenLink().setUrl(docsUrl).setOpenAs(CardService.OpenAs.FULL_SIZE))
+  );
 
   return section;
 }
@@ -314,27 +392,33 @@ function buildFixedFooter_(sessions, locale) {
 
   if (state === 'STOPPED') {
     return CardService.newFixedFooter()
-      .setPrimaryButton(footerButton_(t_('action.exportToSheets', null, locale), 'onExportToSheets'));
+      .setPrimaryButton(footerButton_(t_('action.exportToSheets', null, locale), 'onExportToSheets', true));
   }
 
   var primary;
   if (state === 'RUNNING') {
-    primary = footerButton_(t_('action.break', null, locale), 'onPauseAll');
+    primary = footerButton_(t_('action.break', null, locale), 'onPauseAll', false);
   } else {
-    primary = footerButton_(t_('action.resumeAll', null, locale), 'onResumeAll');
+    primary = footerButton_(t_('action.resumeAll', null, locale), 'onResumeAll', true);
   }
 
-  var secondary = footerButton_(t_('action.finishWork', null, locale), 'onFinishWork');
+  var secondary = footerButton_(t_('action.finishWork', null, locale), 'onFinishWork', state === 'RUNNING');
 
   return CardService.newFixedFooter()
     .setPrimaryButton(primary)
     .setSecondaryButton(secondary);
 }
 
-function footerButton_(label, functionName) {
-  return CardService.newTextButton()
+function footerButton_(label, functionName, isPrimary) {
+  var button = CardService.newTextButton()
     .setText(label)
     .setOnClickAction(buildGlobalAction_(functionName));
+
+  if (isPrimary && CardService.TextButtonStyle && CardService.TextButtonStyle.FILLED) {
+    button.setTextButtonStyle(CardService.TextButtonStyle.FILLED);
+  }
+
+  return button;
 }
 
 function statusLabel_(status, locale) {
@@ -357,10 +441,16 @@ function statusIcon_(status) {
   return CardService.Icon.CLOCK;
 }
 
-function createButton_(label, functionName, context) {
-  return CardService.newTextButton()
+function createButton_(label, functionName, context, isPrimary) {
+  var button = CardService.newTextButton()
     .setText(label)
     .setOnClickAction(buildCardAction_(functionName, context));
+
+  if (isPrimary && CardService.TextButtonStyle && CardService.TextButtonStyle.FILLED) {
+    button.setTextButtonStyle(CardService.TextButtonStyle.FILLED);
+  }
+
+  return button;
 }
 
 function buildGlobalAction_(functionName) {
